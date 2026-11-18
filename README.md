@@ -44,7 +44,7 @@ sudo -u www-data php /var/www/nextcloud/occ app:enable timeguardian
 **From source.**
 
 ```bash
-git clone https://github.com/Mikweb2025-design/timeguardian.git
+git clone <URL of this repository> timeguardian
 cd timeguardian && bash bin/pack.sh        # builds dist/timeguardian-<version>.zip, then unzip as above
 ```
 
