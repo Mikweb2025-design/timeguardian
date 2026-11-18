@@ -44,7 +44,12 @@ class DeviceController extends BaseController {
 	public function redeem(): Response {
 		return $this->run(function () {
 			$p = $this->body();
-			return $this->devices->redeem(is_string($p['token'] ?? null) ? $p['token'] : '', is_string($p['label'] ?? null) ? $p['label'] : '');
+			return $this->devices->redeem(
+				is_string($p['token'] ?? null) ? $p['token'] : '',
+				is_string($p['label'] ?? null) ? $p['label'] : '',
+				is_string($p['code'] ?? null) ? $p['code'] : '',
+				$this->request->getRemoteAddress(),
+			);
 		});
 	}
 

@@ -10,6 +10,8 @@ namespace OCA\TimeGuardian\Controller;
 use OCA\TimeGuardian\AppInfo\Application;
 use OCA\TimeGuardian\Domain\Manifest;
 use OCA\TimeGuardian\Domain\Messages;
+use OCA\TimeGuardian\Domain\StandalonePage;
+use OCA\TimeGuardian\Http\StandalonePageResponse;
 use OCA\TimeGuardian\Service\AccessService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -23,7 +25,7 @@ use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 
-/** HTML pages. Templates are rendered by templates/{main,kiosk,scan,pair}.php (go uses scan without a code). */
+/** HTML pages: main and kiosk use templates/ inside the Nextcloud layout; go, scan and pair are standalone documents (Domain\StandalonePage). */
 class PageController extends Controller {
 	public function __construct(
 		IRequest $request,
@@ -51,24 +53,61 @@ class PageController extends Controller {
 
 	/**
 	 * Start page of the installed app: public, needs no Nextcloud login. A paired phone shows its status and the
-	 * scanner here; an unpaired one gets the pairing instructions. Same template as the scan page, without a code.
+	 * scanner here; an unpaired one gets the pairing instructions. Same page as /s/{code}, without a code.
+	 * Delivered as a standalone document (own head) so that iOS "Add to Home Screen" sees our manifest, icon and title.
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
-	public function go(): TemplateResponse {
-		return new TemplateResponse(Application::APP_ID, 'scan', ['code' => ''], TemplateResponse::RENDER_AS_GUEST);
+	public function go(): StandalonePageResponse {
+		return $this->standalone('scan', ['data-code' => '']);
 	}
 
 	#[PublicPage]
 	#[NoCSRFRequired]
-	public function scan(string $code): TemplateResponse {
-		return new TemplateResponse(Application::APP_ID, 'scan', ['code' => $code], TemplateResponse::RENDER_AS_GUEST);
+	public function scan(string $code): StandalonePageResponse {
+		return $this->standalone('scan', ['data-code' => $code]);
 	}
 
 	#[PublicPage]
 	#[NoCSRFRequired]
-	public function pair(string $token): TemplateResponse {
-		return new TemplateResponse(Application::APP_ID, 'pair', ['token' => $token], TemplateResponse::RENDER_AS_GUEST);
+	public function pair(string $token): StandalonePageResponse {
+		return $this->standalone('pair', ['data-token' => $token]);
+	}
+
+	/** @param array<string,string> $attrs */
+	private function standalone(string $page, array $attrs): StandalonePageResponse {
+		$lang = $this->lang();
+		$name = Manifest::name($lang);
+		$app = Application::APP_ID;
+		$file = fn (string $dir, string $n, string $ext) => $this->urls->linkTo($app, $dir . '/' . $n . '.' . $ext);
+		return new StandalonePageResponse(StandalonePage::html([
+			'lang' => $lang,
+			'title' => $name,
+			'base' => rtrim($this->base(), '/'),
+			'manifest' => $this->urls->linkToRoute('timeguardian.page.manifest'),
+			'icon' => $this->urls->imagePath($app, 'icon-192.png'),
+			'apple' => $this->urls->imagePath($app, 'apple-touch-icon.png'),
+			'jsqr' => $this->urls->linkTo($app, 'js/vendor/jsqr.js'),
+			'css' => array_map(fn (string $n) => $file('css', $n, 'css'), StandalonePage::styles()),
+			'js' => array_map(fn (string $n) => $file('js', $n, 'js'), StandalonePage::scripts()),
+			'page' => $page,
+			'attrs' => $attrs,
+			'requesttoken' => $this->requestToken(),
+		]));
+	}
+
+	/** CSRF token for calls made with the Nextcloud session (a logged-in person without a paired phone). */
+	private function requestToken(): string {
+		try {
+			return \OCP\Server::get(\OC\Security\CSRF\CsrfTokenManager::class)->getToken()->getEncryptedValue();
+		} catch (\Throwable) {
+			return '';
+		}
+	}
+
+	private function lang(): string {
+		$h = (string)$this->request->getHeader('Accept-Language');
+		return Messages::lang($h === '' ? null : substr($h, 0, 2));
 	}
 
 	/** path of the app, e.g. /apps/timeguardian/ (or with index.php) */
@@ -81,13 +120,12 @@ class PageController extends Controller {
 	#[NoCSRFRequired]
 	public function manifest(): DataDisplayResponse {
 		$icon = fn (string $f) => $this->urls->imagePath(Application::APP_ID, $f);
-		$h = (string)$this->request->getHeader('Accept-Language');
 		$m = Manifest::build($this->base(), [
 			'192' => $icon('icon-192.png'),
 			'512' => $icon('icon-512.png'),
 			'maskable' => $icon('icon-maskable-512.png'),
 			'svg' => $icon('app.svg'),
-		], Messages::lang($h === '' ? null : substr($h, 0, 2)));
+		], $this->lang());
 		$r = new DataDisplayResponse(json_encode($m, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}');
 		$r->addHeader('Content-Type', 'application/manifest+json');
 		$r->addHeader('Cache-Control', 'no-cache');

@@ -37,8 +37,9 @@
   function requestToken() {
     try {
       if (root.OC && root.OC.requestToken) { return root.OC.requestToken; }
-      var h = root.document.head;
-      return (h && h.getAttribute('data-requesttoken')) || '';
+      var h = root.document.head, el = root.document.getElementById('tg-root');
+      // standalone pages carry it on #tg-root, Nextcloud pages on <head>
+      return (el && el.getAttribute('data-requesttoken')) || (h && h.getAttribute('data-requesttoken')) || '';
     } catch (e) { return ''; }
   }
 
@@ -121,6 +122,7 @@
     violations: function (from, to) { return request('GET', '/api/violations', { query: { from: from, to: to } }); },
     pairCreate: function () { return request('POST', '/api/pair', { device: 'never' }); },
     pairRedeem: function (token, label) { return request('POST', '/api/pair/redeem', { body: { token: token, label: label }, device: 'never' }); },
+    pairRedeemCode: function (code, label) { return request('POST', '/api/pair/redeem', { body: { code: code, label: label }, device: 'never' }); },
     devices: function () { return request('GET', '/api/devices', { device: 'never' }); },
     revokeDevice: function (id) { return request('DELETE', '/api/devices/' + encodeURIComponent(id), { device: 'never' }); },
     absences: function (scope, from, to) { return request('GET', '/api/absences', { query: { scope: scope, from: from, to: to }, device: 'never' }); },

@@ -32,6 +32,22 @@ namespace OCP {
 namespace {
 	function p($s): void { echo htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 	[$self, $tpl, $name, $val] = array_pad($argv, 4, '');
+	if ($tpl === 'scan' || $tpl === 'pair') {
+		// go / scan / pair are standalone documents (Domain\StandalonePage), not templates
+		foreach (['Manifest', 'Messages', 'StandalonePage'] as $c) {
+			require_once __DIR__ . '/../../../lib/Domain/' . $c . '.php';
+		}
+		$b = '/apps/timeguardian';
+		$f = fn (string $d, string $n, string $e) => $b . '/' . $d . '/' . $n . '.' . $e;
+		echo json_encode(['standalone' => \OCA\TimeGuardian\Domain\StandalonePage::html([
+			'lang' => 'de', 'title' => 'Zeit-Wächter', 'base' => $b, 'manifest' => $b . '/manifest', 'icon' => $b . '/img/icon-192.png',
+			'apple' => $b . '/img/apple-touch-icon.png', 'jsqr' => $b . '/js/vendor/jsqr.js',
+			'css' => array_map(fn ($n) => $f('css', $n, 'css'), \OCA\TimeGuardian\Domain\StandalonePage::styles()),
+			'js' => array_map(fn ($n) => $f('js', $n, 'js'), \OCA\TimeGuardian\Domain\StandalonePage::scripts()),
+			'page' => $tpl, 'attrs' => [$tpl === 'scan' ? 'data-code' : 'data-token' => $val], 'requesttoken' => '',
+		])]);
+		exit;
+	}
 	$_ = $name !== '' ? [$name => $val] : [];
 	ob_start();
 	include __DIR__ . '/../../../templates/' . basename($tpl) . '.php';

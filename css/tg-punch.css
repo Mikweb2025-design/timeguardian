@@ -43,3 +43,13 @@ body { margin: 0; }
 body:has(.tg-pg) { background: var(--tg-bg) !important; background-image: none !important; }
 body:has(.tg-pg) .header-guest, body:has(.tg-pg) footer.guest-box, body:has(.tg-pg) .hidden-visually { display: none !important; }
 body:has(.tg-pg) .wrapper, body:has(.tg-pg) .v-align, body:has(.tg-pg) .guest-content { display: block; width: 100%; max-width: none; min-height: 0; margin: 0; padding: 0; background: none; box-shadow: none; border: 0; }
+
+/* go: pairing by short code, install steps inside the steps list */
+.tg-gosteps__t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; padding-top: 3px; }
+.tg-or { display: flex; align-items: center; gap: 12px; color: var(--tg-muted); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; width: 100%; }
+.tg-or::before, .tg-or::after { content: ''; flex: 1; height: 1px; background: var(--tg-border); }
+.tg-codeform { display: flex; flex-direction: column; gap: 8px; width: 100%; text-align: left; }
+.tg-codeform__l { font-weight: 650; }
+.tg-input--code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; font-size: 22px; }
+.tg-input--code::placeholder { letter-spacing: .14em; opacity: .45; }
+.tg-state__actions .tg-codeform .tg-btn { align-self: stretch; }

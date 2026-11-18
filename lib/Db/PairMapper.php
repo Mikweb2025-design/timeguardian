@@ -29,6 +29,24 @@ class PairMapper extends QBMapper {
 		}
 	}
 
+	public function findByCodeHash(string $hash): ?Pair {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')->from($this->getTableName())
+			->where($qb->expr()->eq('code_hash', $qb->createNamedParameter($hash)))
+			->orderBy('id', 'DESC')->setMaxResults(1);
+		try {
+			return $this->findEntity($qb);
+		} catch (DoesNotExistException) {
+			return null;
+		}
+	}
+
+	/** an unused, unexpired pairing with this code hash exists (collision check while generating) */
+	public function activeCodeExists(string $hash, int $now): bool {
+		$p = $this->findByCodeHash($hash);
+		return $p !== null && !$p->isUsed() && (int)$p->getExpiresAt() > $now;
+	}
+
 	/**
 	 * Marks the pairing token as used, atomically: only one concurrent redeem can win.
 	 */

@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.3
+
+iPhone: the installed home-screen app now opens the stamp app and can be paired inside the app.
+
+* Cause of the broken iPhone install: `/go`, `/s/{code}` and `/pair/{token}` were rendered in Nextcloud's guest layout. Its
+  `<head>` carries Nextcloud's own manifest (`start_url` "/" = Nextcloud login), Nextcloud's touch icon and the title "Nextcloud";
+  our manifest was only swapped in by JavaScript afterwards, which iOS Safari ignores for "Add to Home Screen"
+* The three public pages are now complete standalone HTML documents (`lib/Http/StandalonePageResponse.php`, `lib/Domain/StandalonePage.php`)
+  with their own `<head>`: exactly one manifest link, 180x180 `apple-touch-icon`, localized title and
+  `apple-mobile-web-app-*` tags, `viewport-fit=cover`, safe-area padding, no Nextcloud core JavaScript. Own CSP (own files only, no
+  nonce duty) and `Feature-Policy`/`Permissions-Policy` with `camera=(self)` (Nextcloud sends `camera 'none'` otherwise). Main page
+  and kiosk stay in the Nextcloud layout. The CSRF token for session punches is passed as `data-requesttoken`
+* Pairing in the installed app (iOS home-screen apps have their own storage; a QR scanned with the camera always opens Safari):
+  new short one-time code `ABCD-EFGH` (8 characters, no `0 O 1 I`, 5 minutes, only a keyed hash stored). `POST /api/pair` returns
+  `code`, `POST /api/pair/redeem` accepts `{token}` or `{code}`. Strict rate limit on the code path: 10 wrong attempts per IP and
+  hour. New migration (`code_hash`, table `tg_pairfail`)
+* Devices page shows the code large next to the QR. `/go` shows the steps for an unpaired phone (add to Home Screen, open the app,
+  scan the pairing QR or enter the code); the scanner inside `/go` redeems a pairing QR directly. `/pair/{token}` in an iPhone
+  browser tells people with the installed app to continue there; pairing in the browser without installing still works
+* Scanner on iOS: `playsinline`, `muted`, `autoplay`, fallback to any camera when the rear camera constraint fails, clear hint for a
+  denied camera permission (Settings / Safari / Camera), jsQR fallback as before
+* Cache version raised (`tg-shell-v4`); the service worker still never touches navigations
+
 ## 0.1.2
 
 Cache bump so browsers reload the fixed assets of 0.1.1.

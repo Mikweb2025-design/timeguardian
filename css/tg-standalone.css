@@ -1,0 +1,16 @@
+/* TimeGuardian - base styles of the standalone pages (/go, /s/{code}, /pair/{token}).
+ * These pages are not rendered inside the Nextcloud layout, so nothing is inherited: reset, font, background, safe areas. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--tg-bg); }
+body.tg-standalone {
+  margin: 0; min-height: 100vh; min-height: 100dvh;
+  background: var(--tg-bg); color: var(--tg-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 15px; line-height: 1.45;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none;
+}
+body.tg-standalone *, body.tg-standalone *::before, body.tg-standalone *::after { box-sizing: border-box; }
+body.tg-standalone a { color: var(--tg-primary); }
+body.tg-standalone button, body.tg-standalone input { font-family: inherit; }
+body.tg-standalone noscript p { padding: 24px; text-align: center; }
+/* .tg-pg already pads the bottom by the safe area; the sides and top are padded on the body */

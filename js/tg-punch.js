@@ -35,7 +35,7 @@
     var code = el.getAttribute('data-code') || '';
     var isGo = !code; // /go: Startseite der installierten App (kein Code)
     root.document.title = (isGo ? t('go_title') + ' · ' : '') + t('app_name');
-    var S = { status: null, fetchedAt: 0, busy: false, error: null, result: null, online: true, loading: true, scanning: false, pending: null };
+    var S = { status: null, fetchedAt: 0, busy: false, error: null, result: null, online: true, loading: true, scanning: false, pending: null, pairBusy: false, pairMsg: null, paired: null, codeText: '' };
     var host = h('main', { 'class': 'tg-pg__main' });
     var head = header(el);
     var offBanner = h('div', { 'class': 'tg-banner tg-banner--warn', role: 'status', hidden: '' }, ui.icon('offline', 18), h('span', null, t('offline_banner')));
@@ -45,7 +45,7 @@
 
     TG.app.watchOnline(function (on) {
       S.online = on;
-      if (on) { offBanner.setAttribute('hidden', ''); if (!S.loading && !S.busy) { refresh(true); } } else { offBanner.removeAttribute('hidden'); }
+      if (on) { offBanner.setAttribute('hidden', ''); if (!S.loading && !S.busy && !S.pairBusy && !unpairedNow()) { refresh(true); } } else { offBanner.removeAttribute('hidden'); }
       renderActions();
     });
 
@@ -120,14 +120,67 @@
         h('h1', { 'class': 'tg-state__title' }, title), h('p', { 'class': 'tg-state__text' }, text),
         h('div', { 'class': 'tg-state__actions' }, actions));
     }
-    /* Telefon nicht gekoppelt (und keine Nextcloud-Sitzung): klare Anleitung, Koppel-QR lässt sich hier scannen */
+    /* Koppeln direkt in dieser Seite (installierte App hat eigenen Speicher): per Token aus dem Koppel-QR oder per Kurz-Code */
+    function pairWith(kind, value) {
+      if (S.pairBusy) { return Promise.resolve(); }
+      S.pairBusy = true; S.pairMsg = null; S.scanning = false; render();
+      var label = api.getDeviceName() || core.deviceLabelDefault(root.navigator.userAgent) || t('pair_device_generic');
+      var call = kind === 'code' ? api.pairRedeemCode(value, label) : api.pairRedeem(value, label);
+      return call.then(function (res) {
+        var dt = res && (res.deviceToken || res.device_token);
+        if (!dt) { throw new api.ApiError(500, 'bad_response', t('err_generic_p')); }
+        api.setDevice(dt); api.setDeviceName(label); api.store('set', 'tg.pairedName', String((res && res.name) || ''));
+        S.pairBusy = false; S.pairMsg = null; S.codeText = ''; S.paired = String((res && res.name) || ''); S.error = null; S.status = null; S.loading = true;
+        ui.vibrate([30, 40, 30]); render();
+        return refresh(false);
+      }, function (err) {
+        S.pairBusy = false;
+        var c = err && err.code;
+        S.pairMsg = (c === 'rate_limited' || (err && err.status === 429)) ? t('go_code_rate') : (err && err.status === 0) ? t('err_offline_p') : c === 'token_used' ? t('go_code_used') : c === 'token_expired' ? t('go_code_expired') : kind === 'code' ? t('go_code_bad') : t('go_qr_bad');
+        S.error = { kind: 'unpaired', err: err }; S.status = null; S.loading = false; render();
+      });
+    }
+
+    function unpairedNow() { return !S.status && !!S.error && S.error.kind === 'unpaired'; }
+
+    /* Eingabefeld für den Kurz-Code (ABCD-EFGH) */
+    function codeForm() {
+      var input = h('input', { type: 'text', id: 'tg-code', inputmode: 'text', autocapitalize: 'characters', autocomplete: 'off', autocorrect: 'off', spellcheck: 'false', maxlength: '9', placeholder: 'ABCD-EFGH', value: S.codeText, 'class': 'tg-input tg-input--lg tg-input--code', 'aria-label': t('go_code_label') });
+      var msg = h('div', { 'class': 'tg-formerr', role: 'alert', hidden: '' });
+      var go = btn(t('go_code_btn'), 'check', function () { run(); }, false);
+      if (S.pairBusy) { go.disabled = true; input.disabled = true; }
+      function show(text) { msg.textContent = text || ''; if (text) { msg.removeAttribute('hidden'); } else { msg.setAttribute('hidden', ''); } }
+      function run() {
+        if (!core.validPairCode(input.value)) { show(t('go_code_bad')); return; }
+        show(''); pairWith('code', core.normalizePairCode(input.value));
+      }
+      input.addEventListener('input', function () { var v = core.formatPairCode(input.value); if (v !== input.value) { input.value = v; } S.codeText = v; show(''); });
+      input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { run(); } });
+      if (S.pairMsg) { show(S.pairMsg); }
+      return h('div', { 'class': 'tg-codeform' }, h('label', { 'for': 'tg-code', 'class': 'tg-codeform__l' }, t('go_code_label')), input, msg, go);
+    }
+
+    /* Telefon nicht gekoppelt (und keine Nextcloud-Sitzung): Schrittfolge, Koppel-QR scannen ODER Code eingeben */
     function unpairedCard() {
-      var steps = h('ol', { 'class': 'tg-gosteps' }, [1, 2, 3].map(function (i) { return h('li', null, h('span', { 'class': 'tg-gosteps__n' }, String(i)), h('span', null, t('go_pair_' + i))); }));
+      var pw = TG.pwa, p = pw ? pw.platform() : {}, installed = !!(pw && pw.standalone());
+      var needInstall = !!(p.ios && !installed);   // iPhone im Safari-Tab: erst zum Home-Bildschirm
+      var li = function (n, kids) { return h('li', null, h('span', { 'class': 'tg-gosteps__n' }, String(n)), h('div', { 'class': 'tg-gosteps__t' }, kids)); };
+      var steps;
+      if (needInstall) {
+        steps = h('ol', { 'class': 'tg-gosteps' },
+          li(1, [h('span', null, t('go_pair_1')), TG.install ? TG.install.iosSteps(p.safari) : null]),
+          li(2, [h('span', null, t('go_pair_2'))]),
+          li(3, [h('span', null, t('go_pair_3'))]));
+      } else {
+        steps = h('ol', { 'class': 'tg-gosteps' }, li(1, [h('span', null, t('go_pair_a1'))]), li(2, [h('span', null, t('go_pair_a2'))]));
+      }
+      var scanBtn = btn(t('go_scan_pair'), 'camera', openScanner, true);
+      if (S.pairBusy) { scanBtn.disabled = true; }
       return h('section', { 'class': 'tg-card tg-state tg-state--info', role: 'status' },
         h('div', { 'class': 'tg-state__icon' }, ui.icon('phone', 34)),
         h('h1', { 'class': 'tg-state__title' }, t('go_unpaired_t')), h('p', { 'class': 'tg-state__text' }, t('go_unpaired_p')), steps,
-        h('div', { 'class': 'tg-state__actions' },
-          btn(t('go_scan_pair'), 'camera', openScanner, true),
+        needInstall ? h('p', { 'class': 'tg-note' }, t('go_pair_browser_note')) : null,
+        h('div', { 'class': 'tg-state__actions' }, scanBtn, h('div', { 'class': 'tg-or' }, t('go_or')), codeForm(),
           h('a', { 'class': 'tg-btn', href: TG.app.loginUrl() }, ui.icon('user', 18), t('err_login'))),
         h('p', { 'class': 'tg-note' }, t('go_unpaired_note')));
     }
@@ -140,7 +193,9 @@
         var r = core.parseScanText(text);
         if (!r) { return t('scan_unknown'); }
         ui.vibrate(20);
-        root.location.assign(r.kind === 'pair' ? api.page('/pair/' + encodeURIComponent(r.token)) : api.page('/s/' + encodeURIComponent(r.code)));
+        // Koppel-QR: direkt einlösen, die installierte App hat ihren eigenen Speicher (kein Umweg über eine Seite in Safari)
+        if (r.kind === 'pair') { pairWith('token', r.token); return true; }
+        root.location.assign(api.page('/s/' + encodeURIComponent(r.code)));
         return true;
       } });
       root.setTimeout(function () { sc.start(); }, 30);
@@ -237,12 +292,13 @@
       if (S.loading && !S.status) { host.appendChild(h('section', { 'class': 'tg-card tg-skeleton', 'aria-busy': 'true', 'aria-label': t('loading') }, h('div', { 'class': 'tg-skeleton__ring' }), h('div', { 'class': 'tg-skeleton__line' }), h('div', { 'class': 'tg-skeleton__btn' }))); return; }
       if (!S.status) { host.appendChild(S.error ? errorCard() : h('p', null, t('loading'))); return; }
       if (S.error) { host.appendChild(errorBanner()); }
+      if (S.paired !== null) { host.appendChild(h('div', { 'class': 'tg-flash tg-flash--in', role: 'status' }, h('span', { 'class': 'tg-flash__tick' }, ui.icon('check', 22)), h('span', null, S.paired ? t('go_paired_hi', { name: S.paired }) : t('go_paired')))); }
       host.appendChild(statusCard());
       addInstall();
       renderActions(); tick(); renderFoot();
     }
     function addInstall() {
-      var c = (isGo && TG.install) ? TG.install.card({ dismissable: true }) : null;
+      var c = (isGo && TG.install && !unpairedNow()) ? TG.install.card({ dismissable: true }) : null;
       if (c) { host.appendChild(c); }
     }
     function errorBanner() {
@@ -270,8 +326,8 @@
       if (!code && S.status && !S.error) { /* ohne Code: Kamera-Hinweis */ }
     });
     root.setInterval(function () { if (!S.scanning) { tick(); } }, 1000);
-    root.setInterval(function () { if (!S.scanning && !S.busy && S.online && !root.document.hidden) { refresh(true); } }, 60000);
-    root.document.addEventListener('visibilitychange', function () { if (!root.document.hidden && !S.scanning && !S.busy) { refresh(true); } });
+    root.setInterval(function () { if (!S.scanning && !S.busy && !S.pairBusy && !unpairedNow() && S.online && !root.document.hidden) { refresh(true); } }, 60000);
+    root.document.addEventListener('visibilitychange', function () { if (!root.document.hidden && !S.scanning && !S.busy && !S.pairBusy && !unpairedNow()) { refresh(true); } });
   }
 
   /* ================= KOPPLUNGS-SEITE ================= */
@@ -319,7 +375,10 @@
       go.addEventListener('click', run);
       input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { run(); } });
       if (!token) { S.step = 'fail'; return failCard(); }
+      var inBrowser = !!(TG.pwa && !TG.pwa.standalone() && TG.pwa.platform().ios);
+      var appHint = inBrowser ? h('div', { 'class': 'tg-banner tg-banner--warn', role: 'note' }, ui.icon('phone', 20), h('div', null, h('b', null, t('pair_app_t')), h('div', null, t('pair_app_p')))) : null;
       return h('section', { 'class': 'tg-card tg-state' },
+        appHint,
         h('div', { 'class': 'tg-state__icon tg-state__icon--brand' }, ui.icon('qr', 34)),
         h('h1', { 'class': 'tg-state__title' }, t('pair_title')), h('p', { 'class': 'tg-state__text' }, t('pair_text')),
         existing ? h('p', { 'class': 'tg-note' }, t('pair_replace')) : null,

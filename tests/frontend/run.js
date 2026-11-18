@@ -34,7 +34,7 @@ test('i18n: dynamische Schlüsselfamilien vollständig', () => {
     f_abs_: ['kind', 'date', 'range', 'long'],
     tip_: ['today', 'week', 'month', 'account', 'absences', 'corrections', 'team', 'devices', 'config', 'settings', 'help', 'kiosk'],
     chk_: ['roles', 'region', 'kiosk', 'phone', 'install', 'punch', 'roles_d', 'roles_t', 'region_d', 'region_t', 'kiosk_d', 'kiosk_t', 'phone_d', 'phone_t', 'install_d', 'install_t', 'punch_d', 'punch_t'],
-    how_: ['1_t', '1_p', '2_t', '2_p', '3_t', '3_p'], go_pair_: [1, 2, 3], help_priv_: [1, 2, 3],
+    how_: ['1_t', '1_p', '2_t', '2_p', '3_t', '3_p'], go_pair_: [1, 2, 3, 'a1', 'a2'], help_priv_: [1, 2, 3],
     faq_: [1, 2, 3, 4, 5, 6, 7, 8, 9].reduce((a, n) => a.concat([n + '_q', n + '_a']), []) };
   Object.keys(fam).forEach((p) => fam[p].forEach((s) => assert.ok(i18n.dict.de[p + s], p + s)));
 });
@@ -163,6 +163,34 @@ test('Verbotene Verweise fehlen im Frontend', () => {
   const bad = new RegExp(['dan', 'iele|mich', 'elin|mik', 'web'].join(''), 'i');
   sources.forEach((s, i) => assert.ok(!bad.test(s), 'Verweis in Quelle ' + i));
 });
+
+/* ---- Kurz-Code, Scanner (iOS), Standalone-Seiten ---- */
+test('Kurz-Code: normalisieren, prüfen, formatieren (Alphabet ohne 0/O/1/I)', () => {
+  assert.strictEqual(core.normalizePairCode(' abcd-efgh '), 'ABCDEFGH'); assert.strictEqual(core.formatPairCode('abcdefgh'), 'ABCD-EFGH'); assert.strictEqual(core.formatPairCode('abcdefghjk'), 'ABCD-EFGH');
+  assert.ok(core.validPairCode('abcd efgh')); assert.ok(core.validPairCode('ABCD-EFGH'));
+  ['ABCD-EFG0', 'ABCD-EFGO', 'ABCD-EFG1', 'ABCD-EFGI', 'ABC', '', 'a'.repeat(64), null].forEach((x) => assert.ok(!core.validPairCode(x), String(x)));
+  assert.strictEqual(core.parseScanText('ABCD-EFGH'), null, 'ein Kurz-Code ist kein Stempel-Code');
+});
+test('Scanner: iOS-tauglich (playsinline, muted, autoplay, Rückseitenkamera, Fehlerhinweise, jsQR-Fallback)', () => {
+  const sc = fs.readFileSync(path.join(JS, 'tg-scanner.js'), 'utf8');
+  ['playsinline', 'muted', 'autoplay', 'playsInline = true', "facingMode: { ideal: 'environment' }", 'NotAllowedError', 'OverconstrainedError', 'scan_denied_ios', 'jsQR'].forEach((k) => assert.ok(sc.includes(k), k));
+  assert.ok(/BarcodeDetector' in root/.test(sc) && /loadJsQR\(\)/.test(sc), 'BarcodeDetector fehlt auf iOS: jsQR');
+  ['de', 'en', 'it'].forEach((l) => assert.ok(/Safari/.test(i18n.dict[l].scan_denied_ios), l));
+});
+test('Standalone: /go koppelt per Koppel-QR und Code direkt in der App', () => {
+  const pj = fs.readFileSync(path.join(JS, 'tg-punch.js'), 'utf8');
+  assert.ok(/kind === 'pair'\) \{ pairWith\('token'/.test(pj), 'Koppel-QR im Scanner wird direkt eingelöst');
+  assert.ok(pj.includes("pairWith('code'") && pj.includes('pairRedeemCode'), 'Code-Eingabe');
+  assert.ok(pj.includes('autocapitalize') && pj.includes('ABCD-EFGH'));
+  assert.ok(/pair_app_t/.test(pj), 'Hinweis auf der Kopplungsseite im Browser');
+});
+test('Standalone: Request-Token kommt aus #tg-root, kein Nextcloud-Core nötig', () => {
+  const api = fs.readFileSync(path.join(JS, 'tg-api.js'), 'utf8');
+  assert.ok(api.includes("getAttribute('data-requesttoken')") && api.includes('tg-root'));
+  const app = fs.readFileSync(path.join(JS, 'tg-app.js'), 'utf8');
+  assert.ok(app.includes(": base + '/sw.js'") && app.includes(": base + '/'"), 'Service-Worker-URL ohne OC.generateUrl');
+});
+test('Service-Worker: Cache-Version erhöht', () => { assert.ok(/tg-shell-v([4-9]|\d\d)/.test(fs.readFileSync(path.join(JS, 'tg-sw.js'), 'utf8'))); });
 
 console.log((n - failed) + '/' + n + ' Tests bestanden');
 process.exit(failed ? 1 : 0);

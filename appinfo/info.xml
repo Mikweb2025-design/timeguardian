@@ -33,7 +33,7 @@ Roles come from Nextcloud groups configured in the admin settings. Nextcloud adm
 * Optionale Integrationen: Kalender, Deck, Talk, signierter Webhook
 
 Rollen kommen aus Nextcloud-Gruppen, die in den Admin-Einstellungen festgelegt werden. Nextcloud-Administratoren sind nicht automatisch Chef.]]></description>
-    <version>0.1.2</version>
+    <version>0.1.3</version>
     <licence>agpl</licence>
     <author>TimeGuardian contributors</author>
     <namespace>TimeGuardian</namespace>

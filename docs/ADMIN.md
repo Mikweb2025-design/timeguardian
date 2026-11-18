@@ -36,7 +36,13 @@ Nextcloud administrators are not managers automatically. To act as a manager an 
 `/apps/timeguardian/go` is the start page of the installed app. It needs no Nextcloud login: a paired phone shows its status and the
 scanner, an unpaired phone shows how to pair. Everybody sees an "Install as an app" card on the start page, the devices page and
 `/go` (install button on Chrome/Edge/Android, illustrated steps on iPhone/iPad). On iPhone the installed app is separate from Safari:
-pair it again inside the app by scanning the pairing QR with the "Scan pairing QR" button.
+pair it again inside the app: tap "Scan pairing QR" (the scanner inside the app redeems the QR directly) or type the short code
+(`ABCD-EFGH`) that the Devices page shows next to the QR. The code is valid for 5 minutes and works once; after 10 wrong attempts from
+one IP address the code entry is locked for an hour (the QR is not affected).
+
+`/go`, `/s/{code}` and `/pair/{token}` are served as standalone HTML documents, not inside the Nextcloud layout, so that "Add to
+Home Screen" picks up the app's own manifest, icon (180x180 PNG) and name. They send their own Content-Security-Policy and allow
+the camera (`Permissions-Policy: camera=(self)`); if a reverse proxy rewrites these headers, the scanner on these pages stops working.
 
 ## Kiosk
 

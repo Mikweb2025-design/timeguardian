@@ -113,6 +113,7 @@ body{margin:0;font-family:system-ui,sans-serif;background:#f0f0f0}@media (prefer
 
 function page(tpl, param, val, layout, q, ck) {
   const out = JSON.parse(cp.execFileSync('php', [path.join(__dirname, 'render.php'), tpl, param || '', val || ''], { encoding: 'utf8' }));
+  if (out.standalone) { return out.standalone; }
   const nc = q.get('nc') !== '0';
   const asParam = q.get('as') ? `<script nonce="x">document.cookie='mock_uid=${q.get('as').replace(/[^a-z]/g, '')};path=/'</script>` : '';
   const tags = out.styles.map((s) => `<link rel="stylesheet" href="${BASE}/css/${s}.css">`).join('') + (nc ? `<link rel="stylesheet" href="/mock/nc.css">` : '');
@@ -138,6 +139,7 @@ const server = http.createServer(async (req, res) => {
   let m;
   if (p === BASE + '/' || p === BASE) { if (q.get('as')) { res.setHeader('Set-Cookie', 'mock_uid=' + q.get('as') + '; Path=/'); } return send(res, 200, page('main', '', '', 'user', q, ck), 'text/html; charset=utf-8'); }
   if (p === BASE + '/kiosk') { if (q.get('as')) { res.setHeader('Set-Cookie', 'mock_uid=' + q.get('as') + '; Path=/'); } return send(res, 200, page('kiosk', '', '', 'user', q, ck), 'text/html; charset=utf-8'); }
+  if (p === BASE + '/go') { return send(res, 200, page('scan', 'code', '', 'blank', q, ck), 'text/html; charset=utf-8'); }
   if ((m = /^\/apps\/timeguardian\/s\/(.+)$/.exec(p))) { if (q.get('as')) { res.setHeader('Set-Cookie', 'mock_uid=' + q.get('as') + '; Path=/'); } return send(res, 200, page('scan', 'code', decodeURIComponent(m[1]), 'blank', q, ck), 'text/html; charset=utf-8'); }
   if ((m = /^\/apps\/timeguardian\/pair\/(.+)$/.exec(p))) { return send(res, 200, page('pair', 'token', decodeURIComponent(m[1]), 'blank', q, ck), 'text/html; charset=utf-8'); }
   // API
@@ -145,7 +147,7 @@ const server = http.createServer(async (req, res) => {
   const api = p.slice(BASE.length + 4), verb = req.method;
   const body = verb === 'GET' || verb === 'DELETE' ? {} : await readBody(req);
   if (api === '/pair/redeem') {
-    const pr = S.pair[body.token]; if (!pr) return err(res, 400, 'token_invalid', 'Token ungültig.'); if (pr.used) return err(res, 410, 'token_used', 'Token bereits benutzt.'); if (Date.now() > pr.exp) return err(res, 410, 'token_expired', 'Token abgelaufen.');
+    const pr = body.code ? S.pair['code:' + String(body.code).toUpperCase().replace(/[\s-]+/g, '')] : S.pair[body.token]; if (!pr) return err(res, 400, 'token_invalid', 'Token ungültig.'); if (pr.used) return err(res, 410, 'token_used', 'Token bereits benutzt.'); if (Date.now() > pr.exp) return err(res, 410, 'token_expired', 'Token abgelaufen.');
     pr.used = true; const dev = { id: S.nextId++, uid: pr.uid, token: 'dev-' + pr.uid + '-' + S.nextId, label: String(body.label || 'Gerät'), createdAt: new Date().toISOString(), lastUsed: null, expiresAt: new Date(Date.now() + 180 * 86400000).toISOString(), revoked: false };
     S.devices.push(dev); return send(res, 200, { deviceToken: dev.token, name: USERS[pr.uid], expiresAt: dev.expiresAt });
   }
@@ -192,7 +194,7 @@ const server = http.createServer(async (req, res) => {
   if (api === '/month') { const ym = q.get('ym') || core.ymOf(t0), pr = period(uid, ym + '-01', ym + '-' + pad(core.daysInMonth(ym)), uid); const bp = {}; pr.days.forEach((d) => d.entries.forEach((e) => { bp[e.project || ''] = (bp[e.project || ''] || 0) + e.netMin; })); return send(res, 200, Object.assign({ ym, from: ym + '-01', to: ym + '-' + pad(core.daysInMonth(ym)) }, pr, { byProject: Object.keys(bp).map((k) => ({ project: k || null, netMin: bp[k] })) })); }
   if (api === '/account') return send(res, 200, accOf(uid));
   if (api === '/violations') return send(res, 200, { violations: period(uid, q.get('from'), q.get('to'), uid).violations });
-  if (api === '/pair' && verb === 'POST') { const token = require('crypto').randomBytes(32).toString('hex'); S.pair[token] = { uid, exp: Date.now() + 300000, used: false }; const url = 'http://' + req.headers.host + BASE + '/pair/' + token; return send(res, 201, { token, url, qrText: url, expires: new Date(Date.now() + 300000).toISOString(), expiresInSec: 300 }); }
+  if (api === '/pair' && verb === 'POST') { const token = require('crypto').randomBytes(32).toString('hex'); const code = Array.from({ length: 8 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join(''); S.pair[token] = { uid, exp: Date.now() + 300000, used: false, code }; S.pair['code:' + code] = S.pair[token]; const url = 'http://' + req.headers.host + BASE + '/pair/' + token; return send(res, 201, { token, code: code.slice(0, 4) + '-' + code.slice(4), url, qrText: url, expires: new Date(Date.now() + 300000).toISOString(), expiresInSec: 300 }); }
   if (api === '/devices' && verb === 'GET') return send(res, 200, { devices: S.devices.filter((d) => d.uid === uid).map((d) => ({ id: d.id, label: d.label, createdAt: d.createdAt, lastUsed: d.lastUsed, expiresAt: d.expiresAt, revoked: d.revoked })) });
   if ((m = /^\/devices\/(\d+)$/.exec(api))) { const d = S.devices.find((x) => x.id === +m[1] && x.uid === uid); if (!d) return err(res, 404, 'not_found', 'Nicht gefunden.'); d.revoked = true; return send(res, 200, { revoked: true }); }
   if (api === '/absences' && verb === 'GET') { const sc = q.get('scope') || 'mine'; let l = S.absences; if (sc === 'mine') l = l.filter((a) => a.uid === uid); else { if (needChef()) return; if (sc === 'pending') l = l.filter((a) => a.status === 'pending'); } return send(res, 200, { absences: l.map(absJson) }); }

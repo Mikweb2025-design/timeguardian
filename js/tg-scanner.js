@@ -31,7 +31,9 @@
   /* opts: {onText(text) -> bool|string (true=akzeptiert, string=Fehlertext/weiterscannen)} */
   function create(opts) {
     var video = h('video', { 'class': 'tg-scan__video', playsinline: '', muted: '', autoplay: '', 'aria-label': t('scan_cam_label') });
-    video.muted = true;
+    /* iOS (Safari and installed home-screen app): without playsinline the video opens fullscreen, without muted it does not autoplay */
+    video.muted = true; video.defaultMuted = true; video.playsInline = true; video.autoplay = true;
+    video.setAttribute('webkit-playsinline', ''); video.setAttribute('disablepictureinpicture', '');
     var hint = h('div', { 'class': 'tg-scan__hint', role: 'status', 'aria-live': 'polite' }, t('scan_point'));
     var frame = h('div', { 'class': 'tg-scan__frame', 'aria-hidden': 'true' }, h('i'), h('i'), h('i'), h('i'));
     var msg = h('div', { 'class': 'tg-scan__msg', hidden: '' });
@@ -85,7 +87,12 @@
         showMsg('err', insecure ? t('scan_insecure') : t('scan_unsupported'));
         return Promise.resolve(false);
       }
-      return root.navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false }).then(function (st) {
+      var md = root.navigator.mediaDevices;
+      /* rear camera preferred; if the device rejects the constraint (OverconstrainedError) take any camera */
+      return md.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }).catch(function (err) {
+        if (err && (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError')) { return md.getUserMedia({ video: true, audio: false }); }
+        throw err;
+      }).then(function (st) {
         stream = st; video.srcObject = st;
         return video.play().catch(function () { /* autoplay-Hinweis ignorieren */ });
       }).then(function () {
@@ -102,7 +109,8 @@
       }, function (err) {
         var name = err && err.name;
         var retry = h('button', { type: 'button', 'class': 'tg-btn tg-btn--primary', onclick: function () { msg.setAttribute('hidden', ''); frame.style.display = ''; hint.style.display = ''; start(); } }, t('scan_retry'));
-        if (name === 'NotAllowedError' || name === 'SecurityError') { showMsg('err', t('scan_denied'), retry); }
+        var ios = !!(TG.pwa && TG.pwa.platform && TG.pwa.platform().ios);
+        if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') { showMsg('err', ios ? t('scan_denied_ios') : t('scan_denied'), retry); }
         else if (name === 'NotFoundError' || name === 'OverconstrainedError') { showMsg('err', t('scan_nocam')); }
         else { showMsg('err', t('scan_failed'), retry); }
         return false;

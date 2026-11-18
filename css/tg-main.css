@@ -126,3 +126,9 @@
 .tg-chk { align-items: stretch; } .tg-chk__i { width: 100%; margin: 0; }
 .tg-role__dl { grid-auto-rows: min-content; align-content: start; margin: 8px 0 0; }
 .tg-check .tg-section__head { margin-bottom: 4px; }
+
+/* pairing: short code next to the QR */
+.tg-pair__code { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.tg-pair__code b { font: 700 clamp(28px, 7vw, 40px)/1.1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .12em; padding: 10px 16px; border-radius: 14px; background: var(--tg-tint); border: 1px solid var(--tg-border); user-select: all; -webkit-user-select: all; }
+.tg-pair__code span { color: var(--tg-muted); font-size: 13px; }
+.tg-pair__both { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }

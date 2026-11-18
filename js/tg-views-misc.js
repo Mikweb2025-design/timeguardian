@@ -37,8 +37,9 @@
           var urlIn = h('input', { type: 'text', readonly: '', value: text, 'class': 'tg-input tg-input--mono', 'aria-label': t('pair_link') });
           var overlay = h('div', { 'class': 'tg-pair__exp', hidden: '' }, h('b', null, t('pair_expired')), M.btn(t('pair_again'), 'refresh', start, 'tg-btn--primary'));
           var qrWrap = h('div', { 'class': 'tg-pair__qr' }, qrEl, overlay);
+          var codeBox = r.code ? h('div', { 'class': 'tg-pair__code' }, h('span', null, t('pair_code_lead')), h('b', { 'aria-label': t('pair_code_label') }, String(r.code)), h('span', null, t('pair_code_hint'))) : null;
           ui.mount(pairBox, [
-            h('p', { 'class': 'tg-pair__lead' }, t('pair_scan_with')), qrWrap,
+            h('p', { 'class': 'tg-pair__lead' }, t('pair_scan_with')), h('div', { 'class': 'tg-pair__both' }, qrWrap, codeBox),
             h('div', { 'class': 'tg-cd' }, h('div', { 'class': 'tg-cd__ring' }, ringSvg), h('div', null, h('div', { 'class': 'tg-muted' }, t('pair_valid')), cd)),
             h('details', { 'class': 'tg-details' }, h('summary', null, t('pair_link_alt')), h('div', { 'class': 'tg-copy' }, urlIn, M.btn(t('copy'), null, function () { urlIn.select(); try { root.navigator.clipboard.writeText(text).then(function () { ui.toast(t('copied'), 'ok'); }); } catch (e) { doc.execCommand('copy'); } }, 'tg-btn--sm'))),
             h('div', null, M.btn(t('cancel'), 'close', idle, 'tg-btn--sm'))]);

@@ -63,6 +63,8 @@ Docker (Nextcloud AIO or similar): copy the folder into the container's `custom_
 3. Open `/apps/timeguardian/kiosk` on the entrance tablet with a manager account, switch the browser to full screen and leave it open.
 4. Employees open the app, choose *Devices → Create QR code*, scan it with the phone and install the app. From then on they just scan the kiosk code.
 
+**iPhone note.** An app added to the Home Screen has its own storage, separate from Safari. Add the app first (Safari: Share → Add to Home Screen), open it, and pair **inside** the app with the built-in QR scanner or by typing the short code (`ABCD-EFGH`) shown next to the pairing QR. Pairing done in Safari does not carry over. Pairing in the browser without installing the app also works.
+
 Roles come from Nextcloud groups. Nextcloud administrators are **not** managers automatically.
 
 ### Update and uninstall

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\TimeGuardian\Tests\Domain;
 
+use OCA\TimeGuardian\Domain\StandalonePage;
 use OCA\TimeGuardian\Tests\TestCase;
 
 /** Static checks of the package: routes resolve, classes referenced exist, l10n complete, release hygiene. */
@@ -133,7 +134,7 @@ final class PackageTest extends TestCase {
 	}
 
 	public function testPagesLoadTheBootScriptFirstAndHaveNoInlineScripts(): void {
-		foreach (['main', 'kiosk', 'scan', 'pair'] as $t) {
+		foreach (['main', 'kiosk'] as $t) {
 			$src = (string)file_get_contents($this->root() . "/templates/$t.php");
 			$this->assertFalse(str_contains($src, '<script'), "$t: CSP forbids inline scripts");
 			$this->assertFalse(str_contains($src, 'rel="manifest"'), "$t: tg-boot.js sets the manifest in the head");
@@ -145,16 +146,42 @@ final class PackageTest extends TestCase {
 		}
 	}
 
-	public function testGoRendersTheScanTemplateWithoutCode(): void {
+	public function testPublicPagesAreStandaloneDocuments(): void {
 		$src = (string)file_get_contents($this->root() . '/lib/Controller/PageController.php');
-		$this->assertTrue(preg_match("/function go\\(\\).*?'scan', \\['code' => ''\\]/s", $src) === 1);
-		$this->assertTrue(preg_match('/#\\[PublicPage\\]\\s+#\\[NoCSRFRequired\\]\\s+public function go\\(/', $src) === 1, 'go needs no login');
+		$this->assertTrue(preg_match('/#\[PublicPage\]\s+#\[NoCSRFRequired\]\s+public function go\(\): StandalonePageResponse/', $src) === 1, 'go needs no login');
+		$this->assertTrue(preg_match("/function go\(.*?standalone\('scan', \['data-code' => ''\]\)/s", $src) === 1);
+		$this->assertTrue(preg_match('/public function scan\(string \$code\): StandalonePageResponse/', $src) === 1);
+		$this->assertTrue(preg_match('/public function pair\(string \$token\): StandalonePageResponse/', $src) === 1);
+		$this->assertFalse(str_contains($src, 'RENDER_AS_GUEST'), 'the Nextcloud guest layout brings its own manifest, icon and title');
+		$resp = (string)file_get_contents($this->root() . '/lib/Http/StandalonePageResponse.php');
+		foreach (['EmptyContentSecurityPolicy', 'EmptyFeaturePolicy', "'Content-Security-Policy'", "'Feature-Policy'", "'Permissions-Policy'"] as $needle) {
+			$this->assertTrue(str_contains($resp, $needle), $needle);
+		}
 		$routes = require $this->root() . '/appinfo/routes.php';
 		$urls = array_column($routes['routes'], 'url', 'name');
 		$this->assertSame('/go', $urls['page#go']);
 		$this->assertSame('/api/setup', $urls['setup#index']);
 		$this->assertSame('/api/config', $urls['config#show']);
 		$this->assertSame('/api/config', $urls['config#update']);
+		$this->assertSame('/manifest', $urls['page#manifest']);
+	}
+
+	public function testStandaloneFilesExist(): void {
+		foreach (StandalonePage::scripts() as $js) {
+			$this->assertTrue(is_file($this->root() . '/js/' . $js . '.js'), "js/$js.js");
+		}
+		foreach (StandalonePage::styles() as $css) {
+			$this->assertTrue(is_file($this->root() . '/css/' . $css . '.css'), "css/$css.css");
+		}
+		$this->assertSame('tg-boot', StandalonePage::scripts()[0]);
+		$size = getimagesize($this->root() . '/img/apple-touch-icon.png');
+		$this->assertSame([180, 180], [$size[0], $size[1]], 'apple-touch-icon is 180x180');
+	}
+
+	public function testMigrationAddsCodeHashAndFailTable(): void {
+		$m = (string)file_get_contents($this->root() . '/lib/Migration/Version0002Date20261118000000.php');
+		$this->assertStringContainsString("'code_hash'", $m);
+		$this->assertStringContainsString("'tg_pairfail'", $m);
 	}
 
 	public function testServiceWorkerNeverTouchesNavigationOrApi(): void {
@@ -166,13 +193,13 @@ final class PackageTest extends TestCase {
 		$ctl = (string)file_get_contents($this->root() . '/lib/Controller/PageController.php');
 		$this->assertTrue(str_contains($ctl, "addAllowedConnectDomain(\"'self'\")"), 'the worker script needs connect-src self or its fetch() fails');
 		$this->assertTrue(str_contains($sw, 'skipWaiting') && str_contains($sw, 'clients.claim'));
-		$this->assertTrue(preg_match("/CACHE = 'tg-shell-v([0-9]+)'/", $sw, $m) === 1 && (int)$m[1] >= 2, 'cache version raised');
+		$this->assertTrue(preg_match("/CACHE = 'tg-shell-v([0-9]+)'/", $sw, $m) === 1 && (int)$m[1] >= 4, 'cache version raised');
 	}
 
 	public function testVersionIsBumpedAndDocumented(): void {
 		$xml = (string)file_get_contents($this->root() . '/appinfo/info.xml');
 		$this->assertTrue(preg_match('#<version>([0-9.]+)</version>#', $xml, $m) === 1);
-		$this->assertTrue(version_compare($m[1], '0.1.1', '>='), 'asset cache busting needs a new version');
+		$this->assertTrue(version_compare($m[1], '0.1.3', '>='), 'asset cache busting needs a new version');
 		$this->assertStringContainsString('## ' . $m[1], (string)file_get_contents($this->root() . '/CHANGELOG.md'));
 	}
 }

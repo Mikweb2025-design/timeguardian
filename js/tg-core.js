@@ -226,6 +226,12 @@
   var TOKEN_RE = /^[A-Za-z0-9_-]{20,128}$/;
   // Erkennt App-URLs (…/apps/timeguardian/s/<code> oder …/pair/<token>) bzw. nackten Code.
   // Gibt nur Teile zurück, nie eine fremde URL: Navigation baut die App selbst.
+  /* Short pairing code ABCD-EFGH: alphabet without 0/O/1/I (same as PairCode.php) */
+  var PAIR_CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ2-9]{8}$/;
+  function normalizePairCode(s) { return String(s == null ? '' : s).toUpperCase().replace(/[\s\-._]+/g, ''); }
+  function validPairCode(s) { return PAIR_CODE_RE.test(normalizePairCode(s)); }
+  function formatPairCode(s) { var c = normalizePairCode(s); return c.length > 4 ? c.slice(0, 4) + '-' + c.slice(4, 8) : c; }
+
   function parseScanText(text) {
     if (typeof text !== 'string') { return null; }
     var s = text.trim();
@@ -335,6 +341,7 @@
     clamp: clamp, ratio: ratio, ringGeometry: ringGeometry, limitLevel: limitLevel,
     niceMax: niceMax, yTicks: yTicks, barLayout: barLayout, lineLayout: lineLayout, dayBlockLayout: dayBlockLayout, timelineSegments: timelineSegments,
     heatLevel: heatLevel, monthGrid: monthGrid,
+    normalizePairCode: normalizePairCode, validPairCode: validPairCode, formatPairCode: formatPairCode,
     parseScanText: parseScanText, sameApp: sameApp, CODE_RE: CODE_RE, TOKEN_RE: TOKEN_RE,
     clockTz: clockTz, fmtDayShort: fmtDayShort, fmtDayLong: fmtDayLong, fmtDayMonth: fmtDayMonth, fmtMonth: fmtMonth, fmtMonthShort: fmtMonthShort, fmtDateTime: fmtDateTime,
     previewRules: previewRules, blocksOverlap: blocksOverlap,

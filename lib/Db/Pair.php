@@ -18,6 +18,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setExpiresAt(?int $expiresAt)
  * @method int getUsed()
  * @method void setUsed(int $used)
+ * @method ?string getCodeHash()
+ * @method void setCodeHash(?string $codeHash)
  * @method ?int getCreatedAt()
  * @method void setCreatedAt(?int $createdAt)
  */
@@ -26,6 +28,7 @@ class Pair extends Entity {
 	protected ?string $tokenHash = null;
 	protected ?int $expiresAt = null;
 	protected int $used = 0;
+	protected ?string $codeHash = null;
 	protected ?int $createdAt = null;
 
 	public function __construct() {
@@ -33,6 +36,7 @@ class Pair extends Entity {
 		$this->addType('tokenHash', 'string');
 		$this->addType('expiresAt', 'integer');
 		$this->addType('used', 'integer');
+		$this->addType('codeHash', 'string');
 		$this->addType('createdAt', 'integer');
 	}
 

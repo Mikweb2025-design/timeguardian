@@ -91,9 +91,9 @@ Rules: `DAY10 DAY8 BREAK30 BREAK45 REST11 SUN WEEK48 ABSENT`; `level`: `verstoss
 |---|---|---|
 | `GET /` | session | template `main` (layout `user`) |
 | `GET /kiosk` | manager, kiosk group member or admin | template `kiosk` (layout `user`); others are redirected to `/` |
-| `GET /go` | public | start page of the installed app (`start_url` of the manifest): template `scan` without a code. A paired phone shows its status and the QR scanner, an unpaired one the pairing instructions. Needs no Nextcloud login |
-| `GET /s/{code}` | public | template `scan` (layout `guest`), parameter `code` (string, raw from URL) |
-| `GET /pair/{token}` | public | template `pair` (layout `guest`), parameter `token` (string, raw from URL) |
+| `GET /go` | public | start page of the installed app (`start_url` of the manifest). A paired phone shows its status and the QR scanner, an unpaired one the pairing steps (add to Home Screen, open the app, scan the pairing QR or enter the code). Needs no Nextcloud login. Delivered as a standalone HTML document (own `<head>` with the app manifest, `apple-touch-icon` and title; no Nextcloud layout, no core JavaScript) with its own CSP and `camera=(self)` |
+| `GET /s/{code}` | public | standalone page (same document type as `/go`), parameter `code` (string, raw from URL) |
+| `GET /pair/{token}` | public | standalone page (same document type as `/go`), parameter `token` (string, raw from URL) |
 | `GET /manifest` | public | PWA manifest JSON (`application/manifest+json`): `id`, localized `name`/`short_name` (de Zeit-Wächter, en TimeGuardian, it Guardiano ore, chosen by `Accept-Language`), `start_url` = `<base>go`, `scope` = `<base>`, `display: standalone`, icons 192, 512, maskable 512 and SVG, `theme_color`. The pages replace Nextcloud's own `<link rel="manifest">` with this one (`js/tg-boot.js`) |
 | `GET /sw.js` | public | contents of `js/tg-sw.js`, header `Service-Worker-Allowed` set to the app base path |
 
@@ -237,13 +237,18 @@ Errors: `invalid_code`, `code_required`, `invalid_transition` (409, with `state`
 ## Pairing
 
 ### `POST /api/pair` (session)
--> `201 {"token": "<64 hex>", "url": "https://host/apps/timeguardian/pair/<token>", "qrText": "<same as url>", "expires": "2026-11-17T07:07:00Z", "expiresInSec": 300}`.
-The token is single use and lives 5 minutes. Only its SHA-256 is stored.
+-> `201 {"token": "<64 hex>", "code": "ABCD-EFGH", "url": "https://host/apps/timeguardian/pair/<token>", "qrText": "<same as url>", "expires": "2026-11-17T07:07:00Z", "expiresInSec": 300}`.
+Token and `code` are single use (redeeming either one burns both) and live 5 minutes. Only hashes are stored (SHA-256 of the token, a
+keyed HMAC of the code). The short `code` has 8 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no `0 O 1 I`), shown as `ABCD-EFGH`.
+It exists because an iPhone home-screen app has its own storage: a QR scanned with the camera always opens Safari, so the person
+types the code (or scans the QR with the scanner inside the app).
 
 ### `POST /api/pair/redeem` (public, rate limited)
-`{"token": "<64 hex>", "label": "iPhone"}` -> `{"deviceToken": "<64 hex>", "name": "Anna Weber", "expiresAt": "2027-05-16T07:03:00Z"}`.
+`{"token": "<64 hex>", "label": "iPhone"}` **or** `{"code": "ABCD-EFGH", "label": "iPhone"}` (case, spaces and the dash are ignored) -> `{"deviceToken": "<64 hex>", "name": "Anna Weber", "expiresAt": "2027-05-16T07:03:00Z"}`.
 Store `deviceToken` in `localStorage` and send it as `X-TG-Device`. The token is valid 180 days and renews on use.
 Errors: `token_invalid` (400), `token_expired` (410), `token_used` (410), `rate_limited` (429).
+The `code` path is rate limited strictly: every wrong, expired or already used code counts as a failure for the caller's IP address;
+after 10 failures within an hour further code attempts answer `rate_limited` until the oldest failure is an hour old. The long token path is not affected.
 
 ### `GET /api/devices` (session)
 `{"devices":[{"id":5,"label":"iPhone","createdAt":"...Z","lastUsed":"...Z","expiresAt":"...Z","revoked":false}]}`
