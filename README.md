@@ -5,6 +5,22 @@ A native Nextcloud app (PHP + vanilla JS, no build step, no external service) th
 
 ![How TimeGuardian works](docs/img/how-it-works.svg)
 
+## Screenshots
+
+| Start page for managers | Team heatmap |
+| --- | --- |
+| ![Start page](docs/screenshots/01-today.png) | ![Team](docs/screenshots/03-team.png) |
+
+| Kiosk with the rotating QR code | Week chart |
+| --- | --- |
+| ![Kiosk](docs/screenshots/04-kiosk.png) | ![Week](docs/screenshots/02-week.png) |
+
+| Installed phone app | Configuration for managers |
+| --- | --- |
+| ![Phone](docs/screenshots/05-phone.png) | ![Configuration](docs/screenshots/06-config.png) |
+
+(Screenshots show demo data.)
+
 ## How it works
 
 1. **Kiosk.** A tablet at the entrance opens `/apps/timeguardian/kiosk` and shows a QR code. The code rotates every 60 seconds and is signed with HMAC-SHA256, so a screenshot is useless a minute later.

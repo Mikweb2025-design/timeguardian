@@ -118,7 +118,7 @@ function page(tpl, param, val, layout, q, ck) {
   const asParam = q.get('as') ? `<script nonce="x">document.cookie='mock_uid=${q.get('as').replace(/[^a-z]/g, '')};path=/'</script>` : '';
   const tags = out.styles.map((s) => `<link rel="stylesheet" href="${BASE}/css/${s}.css">`).join('') + (nc ? `<link rel="stylesheet" href="/mock/nc.css">` : '');
   const js = out.scripts.map((s) => `<script src="${BASE}/js/${s}.js" defer></script>`).join('');
-  const body = layout === 'user' ? `<div id="mock-header">Nextcloud (Mock)</div><main id="content">${out.html}</main>` : out.html;
+  const body = layout === 'user' ? `<div id="mock-header">Nextcloud</div><main id="content">${out.html}</main>` : out.html;
   return `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>TimeGuardian</title>${tags}</head><body>${body}${js}</body></html>`;
 }
 const csv = (rows) => '﻿' + rows.map((r) => r.join(',')).join('\r\n');

@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.1.3
+## [0.1.4] - 2026-11-18
+
+App Store metadata: screenshots, repository, bug tracker and documentation links, release archive as tar.gz. No functional change.
+
+## [0.1.3] - 2026-11-18
 
 iPhone: the installed home-screen app now opens the stamp app and can be paired inside the app.
 
@@ -23,11 +27,11 @@ iPhone: the installed home-screen app now opens the stamp app and can be paired 
   denied camera permission (Settings / Safari / Camera), jsQR fallback as before
 * Cache version raised (`tg-shell-v4`); the service worker still never touches navigations
 
-## 0.1.2
+## [0.1.2] - 2026-11-18
 
 Cache bump so browsers reload the fixed assets of 0.1.1.
 
-## 0.1.1
+## [0.1.1] - 2026-11-18
 
 Fixes and orientation. The app is now installable as a PWA and explains itself.
 
@@ -48,7 +52,7 @@ Fixes and orientation. The app is now installable as a PWA and explains itself.
 * Consistent name per language: de Zeit-Wächter, en TimeGuardian, it Guardiano ore (info.xml, menu, page titles, manifest)
 * Tooltips on every menu entry, explanatory empty states, friendlier errors
 
-## 0.1.0
+## [0.1.0] - 2026-11-17
 
 First release.
 

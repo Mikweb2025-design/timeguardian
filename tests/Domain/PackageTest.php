@@ -119,7 +119,7 @@ final class PackageTest extends TestCase {
 				continue;
 			}
 			$n++;
-			$src = strtolower((string)file_get_contents($p));
+			$src = str_replace(strtolower('https://github.com/Mikweb2025-design/timeguardian'), '', strtolower((string)file_get_contents($p)));
 			foreach ($bad as $b) {
 				$this->assertFalse(str_contains($src, $b), $rel . ' contains a forbidden reference');
 			}
@@ -200,6 +200,6 @@ final class PackageTest extends TestCase {
 		$xml = (string)file_get_contents($this->root() . '/appinfo/info.xml');
 		$this->assertTrue(preg_match('#<version>([0-9.]+)</version>#', $xml, $m) === 1);
 		$this->assertTrue(version_compare($m[1], '0.1.3', '>='), 'asset cache busting needs a new version');
-		$this->assertStringContainsString('## ' . $m[1], (string)file_get_contents($this->root() . '/CHANGELOG.md'));
+		$this->assertStringContainsString('## [' . $m[1] . ']', (string)file_get_contents($this->root() . '/CHANGELOG.md'));
 	}
 }

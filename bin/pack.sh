@@ -21,17 +21,27 @@ mkdir -p "$DEST" "$OUT"
 for item in appinfo lib l10n js css img templates docs LICENSE README.md CHANGELOG.md; do
 	[ -e "$item" ] && cp -R "$item" "$DEST/"
 done
+rm -rf "$DEST/docs/screenshots"
 find "$DEST" -name '.DS_Store' -delete
 
 # release hygiene: nothing from the development environment may leak into the package
-if grep -rliE "$(printf 'dan%s|mich%s|mik%s' iele elin web)" "$DEST" >/dev/null 2>&1; then
-	echo "forbidden reference found in package:" >&2
-	grep -rliE "$(printf 'dan%s|mich%s|mik%s' iele elin web)" "$DEST" >&2
-	exit 1
-fi
+# (the public repository URL in info.xml and the README is allowed)
+REPO_URL='https://github.com/Mikweb2025-design/timeguardian'
+PATTERN="$(printf 'dan%s|mich%s|mik%s' iele elin web)"
+LEAK=0
+while IFS= read -r -d '' f; do
+	if sed "s#$REPO_URL##g" "$f" | grep -qiE "$PATTERN"; then echo "forbidden reference in: $f" >&2; LEAK=1; fi
+done < <(find "$DEST" -type f -print0)
+[ "$LEAK" = 0 ] || exit 1
 
 ZIP="$OUT/timeguardian-$VERSION.zip"
 rm -f "$ZIP"
 (cd "$STAGE" && zip -qr -X "$ZIP" timeguardian)
 echo "$ZIP"
 unzip -l "$ZIP" | tail -n 1
+
+# App Store archive: tar.gz with exactly one top-level folder "timeguardian", no .git
+TGZ="$OUT/timeguardian-$VERSION.tar.gz"
+rm -f "$TGZ"
+(cd "$STAGE" && COPYFILE_DISABLE=1 tar -czf "$TGZ" timeguardian)
+echo "$TGZ"

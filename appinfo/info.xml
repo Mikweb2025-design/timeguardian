@@ -33,12 +33,25 @@ Roles come from Nextcloud groups configured in the admin settings. Nextcloud adm
 * Optionale Integrationen: Kalender, Deck, Talk, signierter Webhook
 
 Rollen kommen aus Nextcloud-Gruppen, die in den Admin-Einstellungen festgelegt werden. Nextcloud-Administratoren sind nicht automatisch Chef.]]></description>
-    <version>0.1.3</version>
+    <version>0.1.4</version>
     <licence>agpl</licence>
     <author>TimeGuardian contributors</author>
     <namespace>TimeGuardian</namespace>
+    <documentation>
+        <user>https://github.com/Mikweb2025-design/timeguardian#readme</user>
+        <admin>https://github.com/Mikweb2025-design/timeguardian/blob/main/docs/ADMIN.md</admin>
+    </documentation>
     <category>organization</category>
     <category>tools</category>
+    <website>https://github.com/Mikweb2025-design/timeguardian</website>
+    <bugs>https://github.com/Mikweb2025-design/timeguardian/issues</bugs>
+    <repository type="git">https://github.com/Mikweb2025-design/timeguardian.git</repository>
+    <screenshot>https://github.com/Mikweb2025-design/timeguardian/raw/main/docs/screenshots/01-today.png</screenshot>
+    <screenshot>https://github.com/Mikweb2025-design/timeguardian/raw/main/docs/screenshots/03-team.png</screenshot>
+    <screenshot>https://github.com/Mikweb2025-design/timeguardian/raw/main/docs/screenshots/04-kiosk.png</screenshot>
+    <screenshot>https://github.com/Mikweb2025-design/timeguardian/raw/main/docs/screenshots/02-week.png</screenshot>
+    <screenshot>https://github.com/Mikweb2025-design/timeguardian/raw/main/docs/screenshots/05-phone.png</screenshot>
+    <screenshot>https://github.com/Mikweb2025-design/timeguardian/raw/main/docs/screenshots/06-config.png</screenshot>
     <dependencies>
         <php min-version="8.1"/>
         <nextcloud min-version="31" max-version="35"/>
