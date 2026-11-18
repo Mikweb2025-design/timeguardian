@@ -1,0 +1,48 @@
+{
+ "cells": [
+  [
+   "plain",
+   "plain"
+  ],
+  [
+   "a,b",
+   "\"a,b\""
+  ],
+  [
+   "say \"hi\"",
+   "\"say \"\"hi\"\"\""
+  ],
+  [
+   "=HYPERLINK(\"x\")",
+   "\"'=HYPERLINK(\"\"x\"\")\""
+  ],
+  [
+   "+1",
+   "'+1"
+  ],
+  [
+   "-1+2",
+   "'-1+2"
+  ],
+  [
+   "@SUM(1)",
+   "'@SUM(1)"
+  ],
+  [
+   "line\nbreak",
+   "line break"
+  ],
+  [
+   "tab\there",
+   "tab here"
+  ],
+  [
+   "Ünïcode",
+   "Ünïcode"
+  ],
+  [
+   "",
+   ""
+  ]
+ ]
+}

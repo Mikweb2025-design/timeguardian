@@ -1,0 +1,17 @@
+/* TimeGuardian – Administrationseinstellungen (server gerendert, ohne JavaScript) */
+#timeguardian-admin { max-width: 780px; }
+#timeguardian-admin .tg-adm-lead { color: var(--color-text-maxcontrast); margin: 4px 0 14px; }
+#timeguardian-admin fieldset.tg-adm-sec { border: 1px solid var(--color-border); border-radius: var(--border-radius-large, 12px); padding: 8px 18px 14px; margin: 0 0 16px; }
+#timeguardian-admin fieldset.tg-adm-sec legend { font-size: 17px; font-weight: 700; padding: 0 8px; }
+#timeguardian-admin .tg-adm-intro { color: var(--color-text-maxcontrast); margin: 2px 0 10px; }
+#timeguardian-admin .tg-adm-row { margin: 0 0 14px; }
+#timeguardian-admin .tg-adm-hint { display: block; color: var(--color-text-maxcontrast); font-size: 13px; margin-top: 3px; }
+#timeguardian-admin input[type="text"], #timeguardian-admin input[type="url"], #timeguardian-admin input[type="number"], #timeguardian-admin input[type="password"], #timeguardian-admin select, #timeguardian-admin textarea { width: 100%; max-width: 420px; }
+#timeguardian-admin .tg-adm-days { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+#timeguardian-admin .tg-adm-status { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+#timeguardian-admin .tg-adm-status li { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+#timeguardian-admin .tg-adm-badge { display: inline-block; min-width: 76px; text-align: center; padding: 1px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 700; background: var(--color-background-dark); }
+#timeguardian-admin .tg-adm-badge.is-ok { background: var(--color-success); color: var(--color-success-text, #fff); }
+#timeguardian-admin .tg-adm-badge.is-todo { background: var(--color-warning); color: var(--color-warning-text, #000); }
+#timeguardian-admin .tg-adm-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+#timeguardian-admin .tg-adm-save { position: sticky; bottom: 0; padding: 10px 0; background: var(--color-main-background); }

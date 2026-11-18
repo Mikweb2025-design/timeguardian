@@ -1,0 +1,289 @@
+{
+ "_doc": "Reducer vectors from the reference suite: rows (time, kind start|pause|resume|end, note), nowMin -> expected fields.",
+ "days": [
+  {
+   "rows": [],
+   "now": 600,
+   "expect": {
+    "state": "none",
+    "start": null,
+    "net": 0
+   }
+  },
+  {
+   "rows": [
+    [
+     "08:00",
+     "start",
+     ""
+    ]
+   ],
+   "now": 510,
+   "expect": {
+    "state": "working",
+    "start": 480,
+    "net": 30
+   }
+  },
+  {
+   "rows": [
+    [
+     "08:00",
+     "start",
+     ""
+    ],
+    [
+     "12:00",
+     "pause",
+     ""
+    ]
+   ],
+   "now": 780,
+   "expect": {
+    "state": "pause",
+    "net": 240
+   }
+  },
+  {
+   "rows": [
+    [
+     "08:00",
+     "start",
+     "früh"
+    ],
+    [
+     "12:00",
+     "pause",
+     ""
+    ],
+    [
+     "12:45",
+     "resume",
+     ""
+    ],
+    [
+     "17:00",
+     "end",
+     "fertig"
+    ]
+   ],
+   "now": 1200,
+   "expect": {
+    "state": "done",
+    "pause": 45,
+    "net": 495,
+    "end": 1020
+   }
+  },
+  {
+   "rows": [
+    [
+     "08:00",
+     "start",
+     ""
+    ],
+    [
+     "09:00",
+     "pause",
+     ""
+    ],
+    [
+     "09:10",
+     "resume",
+     ""
+    ],
+    [
+     "10:00",
+     "pause",
+     ""
+    ],
+    [
+     "10:20",
+     "resume",
+     ""
+    ],
+    [
+     "11:00",
+     "end",
+     ""
+    ]
+   ],
+   "now": 0,
+   "expect": {
+    "state": "done",
+    "pause": 30,
+    "net": 150
+   }
+  },
+  {
+   "rows": [
+    [
+     "08:00",
+     "start",
+     ""
+    ],
+    [
+     "08:05",
+     "start",
+     ""
+    ]
+   ],
+   "now": 0,
+   "expect": {
+    "state": "working",
+    "start": 480
+   }
+  },
+  {
+   "rows": [
+    [
+     "10:00",
+     "start",
+     ""
+    ],
+    [
+     "10:00",
+     "end",
+     ""
+    ]
+   ],
+   "now": 0,
+   "expect": {
+    "state": "done",
+    "net": 0
+   }
+  }
+ ],
+ "allowed": [
+  [
+   "none",
+   "in",
+   true
+  ],
+  [
+   "none",
+   "out",
+   false
+  ],
+  [
+   "none",
+   "pause",
+   false
+  ],
+  [
+   "none",
+   "resume",
+   false
+  ],
+  [
+   "working",
+   "pause",
+   true
+  ],
+  [
+   "working",
+   "out",
+   true
+  ],
+  [
+   "working",
+   "in",
+   false
+  ],
+  [
+   "working",
+   "resume",
+   false
+  ],
+  [
+   "pause",
+   "resume",
+   true
+  ],
+  [
+   "pause",
+   "out",
+   false
+  ],
+  [
+   "pause",
+   "in",
+   false
+  ],
+  [
+   "pause",
+   "pause",
+   false
+  ],
+  [
+   "done",
+   "in",
+   true
+  ],
+  [
+   "done",
+   "out",
+   false
+  ],
+  [
+   "done",
+   "pause",
+   false
+  ],
+  [
+   "done",
+   "resume",
+   false
+  ]
+ ],
+ "decide": [
+  [
+   "none",
+   "simple",
+   null,
+   "in"
+  ],
+  [
+   "done",
+   "simple",
+   null,
+   "in"
+  ],
+  [
+   "working",
+   "simple",
+   null,
+   "out"
+  ],
+  [
+   "working",
+   "pause",
+   null,
+   "pause"
+  ],
+  [
+   "pause",
+   "pause",
+   null,
+   "resume"
+  ],
+  [
+   "pause",
+   "simple",
+   null,
+   "resume"
+  ],
+  [
+   "working",
+   "pause",
+   "out",
+   "out"
+  ],
+  [
+   "working",
+   "simple",
+   "pause",
+   "pause"
+  ]
+ ]
+}

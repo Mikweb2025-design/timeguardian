@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" role="img" aria-labelledby="t d">
+<title id="t">How TimeGuardian works</title>
+<desc id="d">A kiosk tablet shows a rotating QR code. The employee scans it with a paired phone. The Nextcloud app records the time, checks the working time rules and shows charts, notifications and exports.</desc>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#00679e"/></marker>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#1b2a38}
+.h{font-size:22px;font-weight:700}.s{font-size:14px;fill:#4a5b6b}.b{font-size:15px;font-weight:600}.sm{font-size:12.5px;fill:#4a5b6b}
+.box{fill:#fff;stroke:#c9d6e2;stroke-width:1.5}.acc{fill:#e6f2f9;stroke:#00679e;stroke-width:1.5}.ok{fill:#e8f6ee;stroke:#2e9d62;stroke-width:1.5}
+.ar{stroke:#00679e;stroke-width:2.5;fill:none;marker-end:url(#a)}.dash{stroke-dasharray:6 5}
+</style></defs>
+<rect width="1000" height="560" rx="18" fill="#f5f9fc"/>
+<text x="40" y="52" class="h">Scan the QR code. The time runs by itself.</text>
+<text x="40" y="76" class="s">No terminal, no badge, no manual timesheet. Everything stays inside your Nextcloud.</text>
+
+<!-- 1 kiosk -->
+<g transform="translate(40,110)">
+<rect class="box" width="220" height="250" rx="14"/>
+<text x="20" y="32" class="b">1  Kiosk at the entrance</text>
+<rect x="55" y="50" width="110" height="110" rx="8" fill="#fff" stroke="#1b2a38" stroke-width="2"/>
+<g fill="#1b2a38"><rect x="65" y="60" width="30" height="30"/><rect x="125" y="60" width="30" height="30"/><rect x="65" y="120" width="30" height="30"/><rect x="104" y="100" width="10" height="10"/><rect x="120" y="116" width="14" height="14"/><rect x="104" y="132" width="10" height="18"/><rect x="140" y="136" width="14" height="14"/><rect x="104" y="64" width="10" height="26"/></g>
+<g fill="#fff"><rect x="72" y="67" width="16" height="16"/><rect x="132" y="67" width="16" height="16"/><rect x="72" y="127" width="16" height="16"/></g>
+<text x="20" y="190" class="sm">New code every 60 seconds,</text>
+<text x="20" y="208" class="sm">signed with HMAC-SHA256.</text>
+<text x="20" y="232" class="sm">Screenshots are useless.</text>
+</g>
+
+<!-- 2 phone -->
+<g transform="translate(330,110)">
+<rect class="box" width="220" height="250" rx="14"/>
+<text x="20" y="32" class="b">2  Employee phone</text>
+<rect x="75" y="48" width="70" height="120" rx="12" fill="#fff" stroke="#1b2a38" stroke-width="2"/>
+<rect x="84" y="62" width="52" height="52" rx="6" class="acc"/>
+<text x="110" y="95" font-size="13" text-anchor="middle" font-weight="700" fill="#00679e">SCAN</text>
+<rect x="88" y="126" width="44" height="14" rx="7" fill="#2e9d62"/>
+<text x="110" y="137" font-size="9" text-anchor="middle" fill="#fff" font-weight="700">IN 08:02</text>
+<text x="20" y="196" class="sm">Paired once by QR. The</text>
+<text x="20" y="214" class="sm">device token can only punch.</text>
+<text x="20" y="236" class="sm">Installable as a PWA.</text>
+</g>
+
+<!-- 3 app -->
+<g transform="translate(620,110)">
+<rect class="acc" width="340" height="250" rx="14"/>
+<text x="20" y="32" class="b">3  TimeGuardian inside Nextcloud</text>
+<text x="20" y="62" class="sm">• Punch states: in, pause, resume, out</text>
+<text x="20" y="84" class="sm">• ArbZG rules: 10 h/day, breaks 30/45 min,</text>
+<text x="20" y="102" class="sm">  11 h rest, Sundays, 48 h/week</text>
+<text x="20" y="124" class="sm">• Time account, public holidays per state</text>
+<text x="20" y="146" class="sm">• Absences and corrections with approval</text>
+<text x="20" y="168" class="sm">• Audit log, retention, GDPR export</text>
+<text x="20" y="190" class="sm">• Background jobs: live warnings, weekly report</text>
+<text x="20" y="226" class="sm">Roles come from Nextcloud groups.</text>
+</g>
+
+<path class="ar" d="M262 235H326"/><path class="ar" d="M552 235H616"/>
+
+<!-- outputs -->
+<path class="ar" d="M790 364V400"/>
+<g transform="translate(40,402)">
+<rect class="ok" width="920" height="112" rx="14"/>
+<text x="20" y="30" class="b">4  What people get</text>
+<g class="sm">
+<text x="20" y="60">Employees: own week, month and</text>
+<text x="20" y="80">time account as charts, requests,</text>
+<text x="20" y="100">JSON and CSV export.</text>
+<text x="330" y="60">Managers: team heatmap, who is in</text>
+<text x="330" y="80">now, violations, approvals, payroll</text>
+<text x="330" y="100">CSV, kiosk, configuration page.</text>
+<text x="640" y="60">Everywhere: notifications, widget,</text>
+<text x="640" y="80">optional Calendar, Deck, Talk and</text>
+<text x="640" y="100">a signed webhook.</text>
+</g>
+</g>
+</svg>

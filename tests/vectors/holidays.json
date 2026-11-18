@@ -1,0 +1,186 @@
+{
+ "easter": [
+  [
+   2024,
+   "2024-03-31"
+  ],
+  [
+   2025,
+   "2025-04-20"
+  ],
+  [
+   2026,
+   "2026-04-05"
+  ],
+  [
+   2027,
+   "2027-03-28"
+  ],
+  [
+   2028,
+   "2028-04-16"
+  ],
+  [
+   2029,
+   "2029-04-01"
+  ],
+  [
+   2030,
+   "2030-04-21"
+  ]
+ ],
+ "days": [
+  {
+   "state": "BE",
+   "day": "2026-04-03",
+   "key": "goodfriday"
+  },
+  {
+   "state": "BE",
+   "day": "2026-04-06",
+   "key": "eastermonday"
+  },
+  {
+   "state": "BE",
+   "day": "2026-05-14",
+   "key": "ascension"
+  },
+  {
+   "state": "BE",
+   "day": "2026-05-25",
+   "key": "whitmonday"
+  },
+  {
+   "state": "BE",
+   "day": "2026-03-08",
+   "key": "womensday"
+  },
+  {
+   "state": "BE",
+   "day": "2026-12-26",
+   "key": "christmas2"
+  },
+  {
+   "state": "BY",
+   "day": "2026-06-04",
+   "key": "corpuschristi"
+  },
+  {
+   "state": "BY",
+   "day": "2026-01-06",
+   "key": "epiphany"
+  },
+  {
+   "state": "BY",
+   "day": "2026-11-01",
+   "key": "allsaints"
+  },
+  {
+   "state": "SN",
+   "day": "2026-11-18",
+   "key": "repentance"
+  },
+  {
+   "state": "SN",
+   "day": "2025-11-19",
+   "key": "repentance"
+  },
+  {
+   "state": "SN",
+   "day": "2024-11-20",
+   "key": "repentance"
+  },
+  {
+   "state": "SN",
+   "day": "2026-10-31",
+   "key": "reformation"
+  },
+  {
+   "state": "TH",
+   "day": "2026-09-20",
+   "key": "childrensday"
+  },
+  {
+   "state": "SL",
+   "day": "2026-08-15",
+   "key": "assumption"
+  },
+  {
+   "state": "BB",
+   "day": "2026-04-05",
+   "key": "eastersunday"
+  },
+  {
+   "state": "BB",
+   "day": "2026-05-24",
+   "key": "whitsunday"
+  },
+  {
+   "state": "MV",
+   "day": "2026-03-08",
+   "key": "womensday"
+  },
+  {
+   "state": "NW",
+   "day": "2026-06-04",
+   "key": "corpuschristi"
+  },
+  {
+   "state": "HH",
+   "day": "2026-10-31",
+   "key": "reformation"
+  }
+ ],
+ "notDays": [
+  {
+   "state": "BE",
+   "day": "2026-06-04"
+  },
+  {
+   "state": "BE",
+   "day": "2026-01-06"
+  },
+  {
+   "state": "NW",
+   "day": "2026-10-31"
+  },
+  {
+   "state": "BY",
+   "day": "2026-03-08"
+  },
+  {
+   "state": "BE",
+   "day": "2026-11-18"
+  },
+  {
+   "state": "MV",
+   "day": "2022-03-08"
+  },
+  {
+   "state": "HH",
+   "day": "2026-03-08"
+  }
+ ],
+ "counts": [
+  {
+   "state": "BE",
+   "year": 2026,
+   "n": 10
+  },
+  {
+   "state": "BY",
+   "year": 2026,
+   "n": 12
+  },
+  {
+   "state": "NW",
+   "year": 2026,
+   "n": 11
+  },
+  {
+   "state": "HH",
+   "year": 2026,
+   "n": 10
+  }
+ ]
+}
