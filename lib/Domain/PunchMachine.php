@@ -26,10 +26,13 @@ final class PunchMachine {
 	/** minimum distance between two punches of one user in seconds */
 	public const MIN_GAP = 120;
 
+	/** a break longer than this (minutes) is treated as forgotten when the person clocks out from it */
+	public const LONG_PAUSE_MIN = 90;
+
 	public static function allowed(string $state, string $action): bool {
 		return (($state === self::NONE || $state === self::DONE) && $action === self::IN)
 			|| ($state === self::WORKING && ($action === self::PAUSE || $action === self::OUT))
-			|| ($state === self::ON_PAUSE && $action === self::RESUME);
+			|| ($state === self::ON_PAUSE && ($action === self::RESUME || $action === self::OUT));
 	}
 
 	public static function next(string $state, string $action): string {
@@ -41,6 +44,20 @@ final class PunchMachine {
 			self::PAUSE => self::ON_PAUSE,
 			default => self::DONE,
 		};
+	}
+
+	/**
+	 * Clock out while on a break. A short break (up to LONG_PAUSE_MIN) is booked as taken and the entry ends now.
+	 * A long break was most likely forgotten: the entry ends where the break began and the break is not counted
+	 * (the net time stays correct, rest time is not understated; the person can correct the end afterwards).
+	 * @return array{endTs:int,pauseMin:int}
+	 */
+	public static function outFromPause(int $startTs, int $pauseAtTs, int $now, int $pauseMin): array {
+		$breakMin = max(0, intdiv($now - $pauseAtTs, 60));
+		if ($breakMin > self::LONG_PAUSE_MIN) {
+			return ['endTs' => max(intdiv($pauseAtTs, 60) * 60, $startTs + 60), 'pauseMin' => $pauseMin];
+		}
+		return ['endTs' => max(intdiv($now, 60) * 60, $startTs + 60), 'pauseMin' => $pauseMin + $breakMin];
 	}
 
 	/**

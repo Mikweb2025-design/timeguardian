@@ -37,7 +37,34 @@ final class PunchMachineTest extends TestCase {
 		$this->assertSame('done', P::next('working', 'out'));
 		$this->assertSame('working', P::next('done', 'in'));
 		$this->assertTgError('invalid_transition', fn () => P::next('none', 'out'));
-		$this->assertTgError('invalid_transition', fn () => P::next('pause', 'out'));
+		$this->assertSame('done', P::next('pause', 'out'));
+		$this->assertTgError('invalid_transition', fn () => P::next('pause', 'in'));
+	}
+
+	public function testOutFromShortPauseBooksThePause(): void {
+		// 08:00 start, break from 12:00, clock out 12:30 -> entry ends now, 30 min break booked on top of 5 earlier
+		$start = 1790000000 - (1790000000 % 60);
+		$pauseAt = $start + 4 * 3600;
+		$now = $pauseAt + 30 * 60 + 20;
+		$o = P::outFromPause($start, $pauseAt, $now, 5);
+		$this->assertSame(intdiv($now, 60) * 60, $o['endTs']);
+		$this->assertSame(35, $o['pauseMin']);
+	}
+
+	public function testOutFromForgottenPauseEndsWhereTheBreakBegan(): void {
+		// break since 06:14 (here: start + 5 h 18 min of work), clocked out after 5 h 47 min of "break"
+		$start = 1790000000 - (1790000000 % 60);
+		$pauseAt = $start + (5 * 60 + 18) * 60 + 13;
+		$now = $pauseAt + (5 * 60 + 47) * 60;
+		$o = P::outFromPause($start, $pauseAt, $now, 0);
+		$this->assertSame(intdiv($pauseAt, 60) * 60, $o['endTs']);
+		$this->assertSame(0, $o['pauseMin'], 'a forgotten break is not booked');
+		$this->assertSame(318, intdiv($o['endTs'] - $start, 60) - $o['pauseMin'], 'net stays 5 h 18 min');
+		// exactly at the limit counts as a normal break
+		$edge = P::outFromPause($start, $pauseAt, $pauseAt + P::LONG_PAUSE_MIN * 60, 0);
+		$this->assertSame(P::LONG_PAUSE_MIN, $edge['pauseMin']);
+		// never before the minimum entry length
+		$this->assertSame($start + 60, P::outFromPause($start, $start, $start + 7 * 3600, 0)['endTs']);
 	}
 
 	public function testDecide(): void {

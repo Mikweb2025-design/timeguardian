@@ -82,7 +82,7 @@ function netNow(uid) {
 }
 function status(uid) {
   const st = S.state[uid];
-  return { name: USERS[uid], mode: S.mode[uid], state: st.state, since: st.since, pauseSince: st.pauseSince, netMinToday: netNow(uid), weekNetMin: weekObj(uid, today(), uid).netMin, targetMin: S.conf[uid].weeklyMin, limitMin: 2880 };
+  return { name: USERS[uid], mode: S.mode[uid], state: st.state, since: st.since, pauseSince: st.pauseSince, now: new Date(Date.now() + (S.skew || 0) * 1000).toISOString(), netMinToday: netNow(uid), weekNetMin: weekObj(uid, today(), uid).netMin, targetMin: S.conf[uid].weeklyMin, limitMin: 2880 };
 }
 function account(uid) {
   const hist = [], t0 = today(); let bal = 95;
@@ -92,7 +92,7 @@ function account(uid) {
 const ACC = {}; const accOf = (uid) => ACC[uid] || (ACC[uid] = account(uid));
 const me = (uid) => {
   const wk = weekObj(uid, today(), uid), td = dayObj(uid, today(), uid), a = accOf(uid), chef = uid === 'boss';
-  return { uid, name: USERS[uid], isChef: chef, isKiosk: chef, isAdmin: false, lang: S.lang[uid], timezone: 'Europe/Berlin', today: today(), conf: { weeklyMin: S.conf[uid].weeklyMin, daysMask: S.conf[uid].daysMask, mode: S.mode[uid], lang: S.lang[uid], canSetTarget: chef }, state: S.state[uid],
+  return { uid, name: USERS[uid], isChef: chef, isKiosk: chef, isAdmin: false, lang: S.lang[uid], timezone: 'Europe/Berlin', today: today(), conf: { weeklyMin: S.conf[uid].weeklyMin, daysMask: S.conf[uid].daysMask, mode: S.mode[uid], lang: S.lang[uid], canSetTarget: chef }, state: Object.assign({}, S.state[uid], { now: new Date(Date.now() + (S.skew || 0) * 1000).toISOString() }),
     todaySummary: { day: td.day, netMin: netNow(uid), pauseMin: td.pauseMin, sollMin: td.sollMin, entries: td.entries }, week: wk, account: { balanceMin: a.balanceMin, asOf: a.asOf, todaySollMin: td.sollMin, todayNetMin: netNow(uid) }, deviceCount: S.devices.filter((d) => d.uid === uid && !d.revoked).length, projects: ['Support', 'Interna', 'Angebote'], features: {},
     pendingDecisions: chef ? { absences: S.absences.filter((x) => x.status === 'pending').length, corrections: S.corrections.filter((x) => x.status === 'pending').length } : { absences: 0, corrections: 0 } };
 };
@@ -134,6 +134,10 @@ const server = http.createServer(async (req, res) => {
   }
   if (p === BASE + '/sw.js') { return send(res, 200, fs.readFileSync(path.join(ROOT, 'js/tg-sw.js')), 'text/javascript', { 'Service-Worker-Allowed': BASE + '/' }); }
   if (p === BASE + '/manifest') { return send(res, 200, { name: 'TimeGuardian', start_url: BASE + '/', scope: BASE + '/', display: 'standalone', icons: [{ src: BASE + '/img/icon-192.png', sizes: '192x192', type: 'image/png' }] }, 'application/manifest+json'); }
+  // Sichtprüfung: /mock/set?uid=anna&state=pause&pauseago=347&workago=500&skew=0 setzt den Zustand (Minuten zurück) und Serveruhr-Versatz (Sekunden)
+  if (p === '/mock/set') { const u = q.get('uid') || 'anna', stt = q.get('state') || 'working', agoIso = (m) => new Date(Date.now() - (+m) * 60000).toISOString().replace(/\.\d+Z$/, 'Z');
+    S.skew = +(q.get('skew') || 0); S.state[u] = { state: stt, since: stt === 'none' || stt === 'done' ? null : agoIso(q.get('workago') || 120), openEntryId: S.state[u].openEntryId, pauseSince: stt === 'pause' ? agoIso(q.get('pauseago') || 8) : null };
+    if (q.get('mode')) S.mode[u] = q.get('mode'); return send(res, 200, { ok: true, state: S.state[u] }); }
   const uid = (() => { const dev = req.headers['x-tg-device']; if (dev) { const d = S.devices.find((x) => x.token === dev && !x.revoked); return d ? d.uid : null; } const c = q.get('as') || ck.mock_uid || 'anna'; return USERS[c] ? c : null; })();
   // Seiten
   let m;

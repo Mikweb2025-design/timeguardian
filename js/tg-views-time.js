@@ -59,13 +59,14 @@
     var legend = h('ul', { 'class': 'tg-legend' },
       h('li', null, h('i', { 'class': 'tg-dot tg-dot--a' }), t('legend_day')), h('li', null, h('i', { 'class': 'tg-dot tg-dot--b' }), t('legend_week')));
 
+    function runPunch(body, msgKey) {
+      return function () {
+        sessionPunch(body).then(function () { ui.vibrate(30); ui.toast(t(msgKey), 'ok'); ctx.reload(); }, function (err) { ui.toast(err && err.message && err.code !== 'offline' ? err.message : t('err_offline_p'), 'err'); });
+      };
+    }
     function actionButtons() {
       var s = st(), mode = me.conf.mode, out = [];
-      var run = function (body, msgKey) {
-        return function () {
-          sessionPunch(body).then(function () { ui.vibrate(30); ui.toast(t(msgKey), 'ok'); ctx.reload(); }, function (err) { ui.toast(err && err.message && err.code !== 'offline' ? err.message : t('err_offline_p'), 'err'); });
-        };
-      };
+      var run = runPunch;
       if (s.state === 'none' || s.state === 'done') {
         out.push(M.btn(t('act_in_scan'), 'camera', function () {
           M.scanDialog().then(function (r) {
@@ -83,18 +84,28 @@
       }
       return out;
     }
+    var lineEl = h('div', { 'class': 'tg-goline', 'aria-live': 'off', hidden: '' }), alertSlot = h('div', { 'class': 'tg-alertslot' }), alertKey = null;
     var kNet = h('div'), kSoll = h('div'), kWeek = h('div'), kBal = h('div');
     function tick() {
       var cur = TG.main.S.me, s = cur.status, now = Date.now(), ft = TG.main.S.fetchedAt;
       var net = core.liveNet((cur.todaySummary || {}).netMin || 0, s.state, ft, now);
       var wk = core.liveNet(cur.week.netMin || 0, s.state, ft, now), target = (cur.week.targetMin || cur.conf.weeklyMin || 2400);
       TG.charts.updateRing(ringSvg, [core.ratio(net, 600), core.ratio(wk, target)], [core.limitLevel(net, 600, 570), wk > (cur.week.limitMin || 2880) ? 'bad' : 'ok']);
-      stateEl.textContent = t('state_' + s.state); stateEl.className = 'tg-ringc__state tg-st-' + s.state;
+      var info = core.stateInfo(s, now, TG.main.S.skew);
+      stateEl.textContent = s.state === 'pause' ? t('ring_pause') : t('state_' + s.state); stateEl.className = 'tg-ringc__state tg-st-' + s.state;
       if (s.state === 'working' || s.state === 'pause') {
-        var ref = s.state === 'pause' ? s.pauseSince : s.since;
-        bigEl.textContent = ref ? core.fmtStopwatch((now - Date.parse(ref)) / 1000) : core.fmtClockDur(net);
-        smallEl.textContent = (s.state === 'pause' ? t('pause_since', { time: F.clock(s.pauseSince) }) : t('since_block', { time: F.clock(s.since) }));
+        bigEl.textContent = info.sec !== null ? core.fmtStopwatch(info.sec) : core.fmtClockDur(net);
+        smallEl.textContent = info.ref ? t(s.state === 'pause' ? 'pause_since' : 'since_block', { time: F.clock(info.ref) }) : '';
       } else { bigEl.textContent = core.fmtClockDur(net) + ' h'; smallEl.textContent = s.state === 'done' ? t('done_today') : t('not_started'); }
+      var live = s.state === 'working' || s.state === 'pause';
+      lineEl.textContent = (live && info.ref) ? t(s.state === 'working' ? 'go_work_dur' : 'go_pause_dur', { time: F.clock(info.ref), dur: F.hm(info.min) }) : '';
+      lineEl.className = 'tg-goline tg-goline--' + s.state;
+      if (live && info.ref) { lineEl.removeAttribute('hidden'); } else { lineEl.setAttribute('hidden', ''); }
+      if ((info.warn || '') !== alertKey) {
+        alertKey = info.warn || '';
+        ui.mount(alertSlot, info.warn ? [ui.stateAlert({ kind: info.warn, fixHref: '#/corrections', onResume: runPunch({ action: 'resume' }, 'res_resume'),
+          onOut: function () { ui.confirm(t('confirm_end_t'), t('confirm_end_p'), t('act_end_do'), t('cancel')).then(function (ok) { if (ok) { runPunch({ action: 'out' }, 'res_out')(); } }); } })] : []);
+      }
       var soll = (cur.todaySummary || {}).sollMin || 0;
       ui.mount(kNet, kpiNode(t('net_today'), F.hm(net), net > 600 ? t('limit_over', { time: F.hm(net - 600) }) : t('limit_left', { time: F.hm(600 - net) }), net > 600 ? 'bad' : net >= 570 ? 'warn' : ''));
       ui.mount(kSoll, kpiNode(t('soll_today'), soll ? F.hm(soll) : '–', soll ? (net >= soll ? t('soll_done', { time: F.hm(net - soll) }) : t('soll_left', { time: F.hm(soll - net) })) : t('no_target_today'), ''));
@@ -105,7 +116,7 @@
     function kpiNode(l, v, sub, tone) { return M.kpi(l, v, sub, tone); }
 
     var greet = h('div', { 'class': 'tg-hero__text' },
-      h('div', { 'class': 'tg-hello' }, t('hello', { name: me.name })), h('div', { 'class': 'tg-muted' }, F.dayLong(F.today())),
+      h('div', { 'class': 'tg-hello' }, t('hello', { name: me.name })), h('div', { 'class': 'tg-muted' }, F.dayLong(F.today())), lineEl, alertSlot,
       h('div', { 'class': 'tg-hero__actions' }, actionButtons()),
       h('div', { 'class': 'tg-hero__sub' }, M.btn(t('entry_new'), 'plus', function () { M.entryDialog(null).then(function (r) { if (r) { ui.toast(t('saved'), 'ok'); if (r.newViolations && r.newViolations.length) { ui.toast(r.newViolations.map(function (v) { return v.text; }).join(' '), 'warn', 7000); } ctx.reload(); } }); }, 'tg-btn--sm')),
       legend);

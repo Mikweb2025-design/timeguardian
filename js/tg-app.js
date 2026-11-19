@@ -22,6 +22,7 @@
         state: String((st && typeof st === 'object') ? (st.state || 'none') : (st || 'none')),
         since: obj.since || null,
         pauseSince: obj.pauseSince || null,
+        serverNow: obj.now || raw.now || null,
         netToday: num(pick(raw, ['netMinToday'], 0)),
         netWeek: num(pick(raw, ['weekNetMin'], 0)),
         weekTarget: num(raw.targetMin) || null,

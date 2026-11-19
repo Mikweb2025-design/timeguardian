@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.5] - 2026-11-19
+
+Break and working duration are shown clearly and correctly; forgotten breaks are caught.
+
+* Fix: on the stamp page (`/go`, `/s/{code}`) the break counter and "break since" used the start of the entry instead of the start of the
+  break, so a short break looked hours long. They now use `pauseSince`
+* Status line on the stamp page and on the Nextcloud page "Today": "On break since 06:14 · 5 h 47 min" and "Working since 06:14 · 4 h 12 min"
+  (current block only), updated every second; the ring is labelled "Break duration". Times are shown in the timezone from the API,
+  durations use the server clock (`now` in `/api/status`, `/api/me`, `/api/punch`) when it is delivered
+* A break longer than 90 minutes, or more than 12 hours of work in one stretch, shows a yellow notice with "Resume now" / "Clock out now"
+  and a link to the corrections page in Nextcloud
+* Fix: "End" while on a break failed with `invalid_transition`. `out` is now allowed from a break: up to 90 minutes the break is booked
+  and the entry ends now; a longer break is treated as forgotten and the entry ends where the break began (net time and rest-time
+  rules stay right)
+* Service worker cache `tg-shell-v5`
+
 ## [0.1.4] - 2026-11-18
 
 App Store metadata: screenshots, repository, bug tracker and documentation links, release archive as tar.gz. No functional change.

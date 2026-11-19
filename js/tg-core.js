@@ -120,6 +120,24 @@
     if (isNaN(t)) { return 0; }
     return Math.max(0, Math.floor((nowMs - t) / 60000));
   }
+  /* Pause/Arbeitsblock: wie lange läuft der aktuelle Zustand, und ist er verdächtig lang? Schwellen wie serverseitig
+   * (LiveWarnings::FORGOT_AT = 12 h, PunchMachine::LONG_PAUSE_MIN = 90 min). skewMs = Serveruhr minus Geräteuhr (0 wenn unbekannt). */
+  var LONG_PAUSE_MIN = 90, LONG_WORK_MIN = 720;
+  function stateInfo(st, nowMs, skewMs) {
+    var out = { state: (st && st.state) || 'none', ref: null, min: null, sec: null, warn: null };
+    if (!st) { return out; }
+    var ref = st.state === 'pause' ? st.pauseSince : st.state === 'working' ? st.since : null, t = ref ? Date.parse(ref) : NaN;
+    if (isNaN(t)) { return out; }
+    var ms = Math.max(0, (nowMs + (skewMs || 0)) - t);
+    out.ref = ref; out.sec = Math.floor(ms / 1000); out.min = Math.floor(ms / 60000);
+    if (st.state === 'pause' && out.min > LONG_PAUSE_MIN) { out.warn = 'pause'; }
+    if (st.state === 'working' && out.min >= LONG_WORK_MIN) { out.warn = 'work'; }
+    return out;
+  }
+  function skewOf(serverNowIso, deviceNowMs) {
+    var t = serverNowIso ? Date.parse(serverNowIso) : NaN;
+    return isNaN(t) ? 0 : t - deviceNowMs;
+  }
   function fmtStopwatch(sec) {
     sec = Math.max(0, Math.floor(sec));
     return pad(Math.floor(sec / 3600)) + ':' + pad(Math.floor(sec / 60) % 60) + ':' + pad(sec % 60);
@@ -338,6 +356,7 @@
     fmtHM: fmtHM, fmtClockDur: fmtClockDur, fmtH: fmtH, fmtSigned: fmtSigned, fmtSignedHM: fmtSignedHM, parseClock: parseClock, clockOf: clockOf,
     isoToLocalClock: isoToLocalClock, isoToLocalDay: isoToLocalDay, localToIso: localToIso,
     entryMinutes: entryMinutes, liveNet: liveNet, sinceMinutes: sinceMinutes, fmtStopwatch: fmtStopwatch,
+    stateInfo: stateInfo, skewOf: skewOf, LONG_PAUSE_MIN: LONG_PAUSE_MIN, LONG_WORK_MIN: LONG_WORK_MIN,
     clamp: clamp, ratio: ratio, ringGeometry: ringGeometry, limitLevel: limitLevel,
     niceMax: niceMax, yTicks: yTicks, barLayout: barLayout, lineLayout: lineLayout, dayBlockLayout: dayBlockLayout, timelineSegments: timelineSegments,
     heatLevel: heatLevel, monthGrid: monthGrid,

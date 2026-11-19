@@ -35,7 +35,7 @@
     var code = el.getAttribute('data-code') || '';
     var isGo = !code; // /go: Startseite der installierten App (kein Code)
     root.document.title = (isGo ? t('go_title') + ' · ' : '') + t('app_name');
-    var S = { status: null, fetchedAt: 0, busy: false, error: null, result: null, online: true, loading: true, scanning: false, pending: null, pairBusy: false, pairMsg: null, paired: null, codeText: '' };
+    var S = { status: null, fetchedAt: 0, skew: 0, alertKey: null, busy: false, error: null, result: null, online: true, loading: true, scanning: false, pending: null, pairBusy: false, pairMsg: null, paired: null, codeText: '' };
     var host = h('main', { 'class': 'tg-pg__main' });
     var head = header(el);
     var offBanner = h('div', { 'class': 'tg-banner tg-banner--warn', role: 'status', hidden: '' }, ui.icon('offline', 18), h('span', null, t('offline_banner')));
@@ -56,7 +56,7 @@
         if (!norm.weekTarget) { norm.weekTarget = S.status.weekTarget; }
         if (!norm.name) { norm.name = S.status.name; }
       }
-      S.status = norm; S.fetchedAt = Date.now();
+      S.status = norm; S.fetchedAt = Date.now(); S.skew = core.skewOf(norm.serverNow, S.fetchedAt);
     }
 
     function refresh(silent) {
@@ -215,7 +215,8 @@
       var smallEl = h('div', { 'class': 'tg-ringc__small' });
       centerEl = { state: stateEl, big: bigEl, small: smallEl };
       var ringBox = h('div', { 'class': 'tg-ringc' }, ringSvg, h('div', { 'class': 'tg-ringc__center' }, stateEl, bigEl, smallEl));
-      subEls = { today: h('b'), week: h('b'), limit: h('div', { 'class': 'tg-limit' }), go: isGo ? h('div', { 'class': 'tg-goline', 'aria-live': 'polite' }) : null };
+      subEls = { today: h('b'), week: h('b'), limit: h('div', { 'class': 'tg-limit' }), go: h('div', { 'class': 'tg-goline', 'aria-live': 'off' }), alert: h('div', { 'class': 'tg-alertslot' }) };
+      S.alertKey = null;
       var stats = h('div', { 'class': 'tg-stats' },
         h('div', { 'class': 'tg-stat' }, h('span', null, t('net_today')), subEls.today),
         h('div', { 'class': 'tg-stat' }, h('span', null, t('week')), subEls.week));
@@ -223,7 +224,7 @@
       var actions = h('div', { 'class': 'tg-actions', id: 'tg-actions' });
       return h('section', { 'class': 'tg-card tg-status tg-status--' + st.state },
         st.name ? h('div', { 'class': 'tg-hello' }, t('hello', { name: st.name })) : null,
-        subEls.go, resultEl, ringBox, stats, subEls.limit, actions);
+        subEls.go, subEls.alert, resultEl, ringBox, stats, subEls.limit, actions);
     }
 
     function renderActions() {
@@ -264,19 +265,28 @@
       var wt = st.weekTarget || 2400;
       var todayLvl = core.limitLevel(net, 600, 570), weekLvl = weekNet > 2880 ? 'bad' : (weekNet >= wt ? 'ok' : 'ok');
       TG.charts.updateRing(ringSvg, [core.ratio(net, 600), core.ratio(weekNet, wt)], [todayLvl, weekLvl === 'bad' ? 'bad' : 'ok']);
-      centerEl.state.textContent = t('state_' + st.state);
+      var info = core.stateInfo(st, now, S.skew);
+      centerEl.state.textContent = st.state === 'pause' ? t('ring_pause') : t('state_' + st.state);
       centerEl.state.className = 'tg-ringc__state tg-st-' + st.state;
-      if (st.state === 'working' || st.state === 'pause') {
-        var sec = st.since ? Math.max(0, (now - Date.parse(st.since)) / 1000) : 0;
-        centerEl.big.textContent = st.since ? core.fmtStopwatch(sec) : core.fmtClockDur(net);
-        centerEl.small.textContent = st.state === 'working' ? t('since_block', { time: core.isoToLocalClock(st.since) }) : t('pause_since', { time: core.isoToLocalClock(st.since) });
+      var live = st.state === 'working' || st.state === 'pause';
+      if (live) {
+        centerEl.big.textContent = info.sec !== null ? core.fmtStopwatch(info.sec) : core.fmtClockDur(net);
+        centerEl.small.textContent = info.ref ? t(st.state === 'working' ? 'since_block' : 'pause_since', { time: core.isoToLocalClock(info.ref) }) : '';
       } else {
         centerEl.big.textContent = core.fmtClockDur(net) + ' h';
         centerEl.small.textContent = st.state === 'done' ? t('done_today') : t('not_started');
       }
-      if (subEls.go) {
-        subEls.go.textContent = st.state === 'working' ? t('go_in_since', { time: core.isoToLocalClock(st.since) }) : st.state === 'pause' ? t('go_pause_since', { time: core.isoToLocalClock(st.since) }) : st.state === 'done' ? t('go_done') : t('go_none');
-        subEls.go.className = 'tg-goline tg-goline--' + st.state;
+      var line = '';
+      if (live && info.ref) { line = t(st.state === 'working' ? 'go_work_dur' : 'go_pause_dur', { time: core.isoToLocalClock(info.ref), dur: core.fmtHM(info.min) }); }
+      else if (isGo) { line = st.state === 'done' ? t('go_done') : t('go_none'); }
+      subEls.go.textContent = line;
+      if (line) { subEls.go.removeAttribute('hidden'); } else { subEls.go.setAttribute('hidden', ''); }
+      subEls.go.className = 'tg-goline tg-goline--' + st.state;
+      var dis = S.busy || !S.online, key = (info.warn || '') + (dis ? '!' : '');
+      if (key !== S.alertKey) {
+        S.alertKey = key;
+        ui.mount(subEls.alert, info.warn ? [ui.stateAlert({ kind: info.warn, disabled: dis, fixHref: api.page('/') + '#/corrections',
+          onResume: function () { doPunch({ action: 'resume' }, 'resume'); }, onOut: function () { confirmEnd(); } })] : []);
       }
       subEls.today.textContent = core.fmtHM(net);
       subEls.week.textContent = core.fmtClockDur(weekNet) + ' / ' + core.fmtClockDur(wt) + ' h';

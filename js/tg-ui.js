@@ -193,5 +193,20 @@
     return wrap;
   }
 
-  TG.ui = { h: h, s: s, clear: clear, mount: mount, icon: icon, toast: toast, modal: modal, confirm: confirmDialog, vibrate: vibrate, beep: beep, debounce: debounce, field: field, select: selectEl, tabs: tabs, SVGNS: SVGNS };
+  /* Gelber Hinweis bei verdächtig langer Pause / vergessenem Ausstempeln.
+   * o: { kind: 'pause'|'work', disabled, onResume, onOut, fixHref } */
+  function stateAlert(o) {
+    var tr = function (k) { return TG.i18n.t(k); };
+    var acts = [];
+    if (o.kind === 'pause') { acts.push(h('button', { type: 'button', 'class': 'tg-btn tg-btn--primary tg-btn--go', disabled: o.disabled ? true : null, onclick: o.onResume }, icon('play', 18), tr('act_resume_now'))); }
+    acts.push(h('button', { type: 'button', 'class': 'tg-btn' + (o.kind === 'pause' ? '' : ' tg-btn--primary tg-btn--stop'), disabled: o.disabled ? true : null, onclick: o.onOut }, icon('stop', 18), tr('act_out_now')));
+    return h('div', { 'class': 'tg-banner tg-banner--warn tg-alert', role: 'alert' }, icon('warn', 20),
+      h('div', { 'class': 'tg-alert__body' },
+        h('b', null, tr(o.kind === 'pause' ? 'warn_pause_long' : 'warn_work_long')),
+        h('div', { 'class': 'tg-alert__act' }, acts),
+        h('a', { 'class': 'tg-link', href: o.fixHref }, icon('edit', 16), tr('corr_fix')),
+        h('div', { 'class': 'tg-hint' }, tr('corr_fix_hint'))));
+  }
+
+  TG.ui = { stateAlert: stateAlert, h: h, s: s, clear: clear, mount: mount, icon: icon, toast: toast, modal: modal, confirm: confirmDialog, vibrate: vibrate, beep: beep, debounce: debounce, field: field, select: selectEl, tabs: tabs, SVGNS: SVGNS };
 })(typeof self !== 'undefined' ? self : this);

@@ -6,7 +6,7 @@
   var t = function (k, p) { return TG.i18n.t(k, p); };
   var doc = root.document;
 
-  var S = { me: null, fetchedAt: 0, route: null, leave: [] };
+  var S = { me: null, fetchedAt: 0, skew: 0, route: null, leave: [] };
   var views = TG.views = TG.views || {};
 
   var NAV = [
@@ -242,7 +242,7 @@
   }
 
   function applyMe(raw) {
-    S.me = TG.model.me(raw); S.fetchedAt = Date.now();
+    S.me = TG.model.me(raw); S.fetchedAt = Date.now(); S.skew = core.skewOf(S.me.status && S.me.status.serverNow, S.fetchedAt);
     var lang = S.me.conf.lang || S.me.lang;
     if (lang && lang !== TG.i18n.lang() && TG.i18n.has(lang)) { TG.i18n.setLang(lang, true); }
     doc.documentElement.lang = TG.i18n.lang();

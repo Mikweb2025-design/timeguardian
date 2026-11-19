@@ -28,7 +28,7 @@ class StatusService {
 	}
 
 	/**
-	 * @return array{state:string,since:?string,openEntryId:?int,pauseSince:?string}
+	 * @return array{state:string,since:?string,openEntryId:?int,pauseSince:?string,now:string}
 	 */
 	public function state(string $uid): array {
 		$now = $this->time->getTime();
@@ -61,6 +61,7 @@ class StatusService {
 			'since' => Dates::isoOrNull($since),
 			'openEntryId' => $open === null ? null : (int)$open->getId(),
 			'pauseSince' => Dates::isoOrNull($pauseSince),
+			'now' => Dates::iso($now),
 		];
 	}
 
@@ -73,7 +74,7 @@ class StatusService {
 	}
 
 	/**
-	 * @return array{name:string,mode:string,state:string,since:?string,pauseSince:?string,netMinToday:int,weekNetMin:int,targetMin:int,limitMin:int}
+	 * @return array{name:string,mode:string,state:string,since:?string,pauseSince:?string,now:string,netMinToday:int,weekNetMin:int,targetMin:int,limitMin:int}
 	 */
 	public function status(string $uid): array {
 		$now = $this->time->getTime();
@@ -101,6 +102,7 @@ class StatusService {
 			'state' => $state['state'],
 			'since' => $state['since'],
 			'pauseSince' => $state['pauseSince'],
+			'now' => $state['now'],
 			'netMinToday' => $day,
 			'weekNetMin' => $week,
 			'targetMin' => $conf['weeklyMin'],

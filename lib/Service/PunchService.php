@@ -104,7 +104,11 @@ class PunchService {
 				if ($action === PunchMachine::RESUME && $last !== null) {
 					$entry->setPauseMin($entry->getPauseMin() + max(0, intdiv($now - (int)$last->getAtTs(), 60)));
 				}
-				if ($action === PunchMachine::OUT) {
+				if ($action === PunchMachine::OUT && $state['state'] === PunchMachine::ON_PAUSE && $last !== null) {
+					$o = PunchMachine::outFromPause((int)$entry->getStartTs(), (int)$last->getAtTs(), $now, (int)$entry->getPauseMin());
+					$entry->setEndTs($o['endTs']);
+					$entry->setPauseMin($o['pauseMin']);
+				} elseif ($action === PunchMachine::OUT) {
 					$entry->setEndTs(max($minute, (int)$entry->getStartTs() + 60));
 				}
 				if ($project !== null) {

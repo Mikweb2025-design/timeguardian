@@ -28,7 +28,7 @@ A native Nextcloud app (PHP + vanilla JS, no build step, no external service) th
 3. **Scan to clock in and out.** Scanning the kiosk code starts the time, the next scan stops it (or switches pause/resume, depending on the chosen mode). Double scans within two minutes are rejected.
 4. **Rules and views.** The app builds time entries, checks the ArbZG rules and shows the results to the employee (week, month, time account) and to managers (team heatmap, who is in now, violations, approvals).
 
-The phone can install the app as a PWA. Its start page is `/apps/timeguardian/go`: status, a big *Scan QR code* button and pause/resume/end. The full interface is the normal Nextcloud web app.
+The phone can install the app as a PWA. Its start page is `/apps/timeguardian/go`: status (including how long the current break or working block has lasted), a big *Scan QR code* button and pause/resume/end. A break over 90 minutes or more than 12 hours of work in one go shows a notice with *Resume now* / *Clock out now* and a link to corrections. The full interface is the normal Nextcloud web app.
 
 ## Features
 

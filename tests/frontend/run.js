@@ -50,6 +50,36 @@ test('Dauerformate', () => {
   assert.strictEqual(core.fmtSignedHM(-30), '−0:30 h'); assert.strictEqual(core.fmtSignedHM(95), '+1:35 h'); assert.strictEqual(core.fmtSignedHM(0), '0:00 h');
   assert.strictEqual(core.fmtStopwatch(3725), '01:02:05');
 });
+test('Pause/Arbeitsblock: Dauer, Schwellen, Serveruhr', () => {
+  const T0 = Date.parse('2026-11-19T05:14:00Z'), at = (min) => T0 + min * 60000;
+  const pause = { state: 'pause', since: '2026-11-19T04:00:00Z', pauseSince: '2026-11-19T05:14:00Z' };
+  const a = core.stateInfo(pause, at(347) + 48000, 0);
+  assert.strictEqual(a.min, 347); assert.strictEqual(a.sec, 347 * 60 + 48); assert.strictEqual(a.ref, pause.pauseSince, 'Pause zählt ab pauseSince, nicht ab Blockbeginn');
+  assert.strictEqual(core.fmtHM(a.min), '5 h 47 min'); assert.strictEqual(core.fmtStopwatch(a.sec), '05:47:48'); assert.strictEqual(a.warn, 'pause');
+  assert.strictEqual(core.stateInfo(pause, at(90), 0).warn, null, '90 min ist noch normal'); assert.strictEqual(core.stateInfo(pause, at(91), 0).warn, 'pause');
+  assert.strictEqual(core.LONG_PAUSE_MIN, 90); assert.strictEqual(core.LONG_WORK_MIN, 720);
+  const work = { state: 'working', since: '2026-11-19T05:14:00Z', pauseSince: null };
+  assert.strictEqual(core.stateInfo(work, at(252), 0).min, 252); assert.strictEqual(core.stateInfo(work, at(252), 0).warn, null);
+  assert.strictEqual(core.stateInfo(work, at(719), 0).warn, null); assert.strictEqual(core.stateInfo(work, at(720), 0).warn, 'work');
+  // Geräteuhr 5 min nachgehend: Serveruhr korrigiert
+  const skew = core.skewOf('2026-11-19T05:19:00Z', Date.parse('2026-11-19T05:14:00Z')); assert.strictEqual(skew, 300000);
+  assert.strictEqual(core.stateInfo(work, at(10), skew).min, 15); assert.strictEqual(core.skewOf(null, 5), 0); assert.strictEqual(core.skewOf('x', 5), 0);
+  // Uhr vor dem Beginn (negativer Versatz) und fehlende Daten werden nie negativ
+  assert.strictEqual(core.stateInfo(work, at(-5), 0).min, 0); assert.strictEqual(core.stateInfo({ state: 'pause', pauseSince: null }, at(5), 0).min, null);
+  assert.strictEqual(core.stateInfo({ state: 'done', since: work.since }, at(5), 0).warn, null); assert.strictEqual(core.stateInfo(null, 0, 0).state, 'none');
+});
+test('Pause/Arbeitsblock: i18n-Schlüssel de/en/it', () => {
+  ['go_work_dur', 'go_pause_dur', 'ring_pause', 'warn_pause_long', 'warn_work_long', 'act_resume_now', 'act_out_now', 'corr_fix', 'corr_fix_hint'].forEach((k) => ['de', 'en', 'it'].forEach((l) => assert.ok(i18n.dict[l][k], l + ':' + k)));
+  ['go_work_dur', 'go_pause_dur'].forEach((k) => ['de', 'en', 'it'].forEach((l) => assert.ok(/\{time\}/.test(i18n.dict[l][k]) && /\{dur\}/.test(i18n.dict[l][k]), l + ':' + k)));
+  assert.strictEqual(i18n.dict.de.warn_pause_long, 'Diese Pause ist ungewöhnlich lang. Hast du vergessen weiterzumachen oder auszustempeln?');
+  assert.strictEqual(i18n.dict.de.warn_work_long, 'Du arbeitest seit über 12 Stunden – hast du vergessen auszustempeln?');
+});
+test('Statuszeile: Pause und Arbeit im Format "seit hh:mm Uhr · h min"', () => {
+  i18n.setLang('de');
+  assert.strictEqual(i18n.t('go_pause_dur', { time: '06:14', dur: core.fmtHM(347) }), 'In Pause seit 06:14 Uhr · 5 h 47 min');
+  assert.strictEqual(i18n.t('go_work_dur', { time: '06:14', dur: core.fmtHM(252) }), 'Arbeitet seit 06:14 Uhr · 4 h 12 min');
+  assert.strictEqual(i18n.dict.de.ring_pause, 'Pausendauer');
+});
 test('parseClock/clockOf/localToIso', () => {
   assert.strictEqual(core.parseClock('08:05'), 485); assert.strictEqual(core.parseClock('24:00'), null); assert.strictEqual(core.parseClock('8:5'), null); assert.strictEqual(core.clockOf(485), '08:05');
   assert.ok(/^2026-11-17T/.test(core.localToIso('2026-11-17', '08:00')));

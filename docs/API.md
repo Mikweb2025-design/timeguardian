@@ -81,9 +81,11 @@ Rules: `DAY10 DAY8 BREAK30 BREAK45 REST11 SUN WEEK48 ABSENT`; `level`: `verstoss
 
 ### State
 ```json
-{ "state": "working", "since": "2026-11-17T07:02:00Z", "openEntryId": 41, "pauseSince": null }
+{ "state": "working", "since": "2026-11-17T07:02:00Z", "openEntryId": 41, "pauseSince": null, "now": "2026-11-17T09:30:12Z" }
 ```
-`state`: `none | working | pause | done`. `pauseSince` is set in state `pause`.
+`state`: `none | working | pause | done`. `since` is the start of the current working stretch (state `working`) or the start of the
+open entry (state `pause`). `pauseSince` is set in state `pause` and is the instant the break began. `now` is the server clock; clients
+use it to correct their own clock for live durations (`GET /api/status` carries it at top level as well).
 
 ## Pages (HTML)
 
@@ -213,6 +215,7 @@ A device token gives access to nothing else.
 ```
 * `code` is the raw code from the scanned URL `/s/<code>`. It is **required** for `in` and when no `action` is given.
 * `action` is optional. Without it the next step is derived: `none/done -> in`; `working -> out` (mode `simple`) or `pause` (mode `pause`); `pause -> resume`.
+* `out` is also allowed while on a break. A break of up to 90 minutes is booked as taken and the entry ends now. A longer break is assumed forgotten: the entry ends where the break began and the break is not booked (the net time stays right; the end can be corrected afterwards). `resume` books the whole break as `pauseMin`.
 * In mode `simple` a second block on the same day is allowed; the gap becomes the break (gaps of 15 minutes or more count as break).
 * Server time is used; clients cannot send a time.
 

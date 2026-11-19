@@ -1,7 +1,7 @@
 /* TimeGuardian – Service-Worker. Fasst ausschließlich Dateien der App an (js, css, img). Niemals Seitenaufrufe,
  * niemals /api/, niemals HTML: Navigationen laufen immer direkt zum Server. Es gibt bewusst keine Offline-Seite. */
 'use strict';
-var CACHE = 'tg-shell-v4';
+var CACHE = 'tg-shell-v5';
 var ASSET_RE = /\/timeguardian\/(js|css|img)\/[^?#]+\.(js|css|png|svg|webp|ico)$/;
 
 // Alte Version sofort ersetzen (auch einen fehlerhaften Vorgänger mit Offline-Seite)
