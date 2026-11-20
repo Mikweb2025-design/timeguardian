@@ -3,6 +3,8 @@
 **Working time tracking for Nextcloud: scan a QR code and the clock runs.**
 A native Nextcloud app (PHP + vanilla JS, no build step, no external service) that records working time, checks it against the German working time act (ArbZG) and shows charts, notifications and exports. Nextcloud 31 to 35, PHP 8.1+, AGPL-3.0-or-later.
 
+**Article and live demo:** [How TimeGuardian came about, with an n8n version you can try](https://daniele-michelin.com/en/blog/timesheet-guardian/) · [Demo page](https://daniele-michelin.com/en/timesheet-guardian/) · author: [daniele-michelin.com](https://daniele-michelin.com/en/)
+
 ![How TimeGuardian works](docs/img/how-it-works.svg)
 
 ## Screenshots
